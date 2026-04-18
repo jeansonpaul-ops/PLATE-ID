@@ -773,9 +773,14 @@ function canvasToBitmap(canvas) {
   const img=canvas.getContext('2d').getImageData(0,0,W,H).data;
   const bpr=Math.ceil(W/8), buf=new Uint8Array(bpr*H);
   for(let r=0;r<H;r++) for(let c=0;c<W;c++){
-    const i=(r*W+c)*4;
-    // seuil 128 : pixel noir uniquement si vraiment sombre → pas de négatif
-    if(.299*img[i]+.587*img[i+1]+.114*img[i+2] < 128)
+    // Rotation 180° : on lit le pixel en sens inverse
+    const rr=H-1-r, rc=W-1-c;
+    const i=(rr*W+rc)*4;
+    const lum=.299*img[i]+.587*img[i+1]+.114*img[i+2];
+    // bit=1 = NOIR sur imprimante TSPL
+    // texte noir sur fond blanc → on met 1 si pixel sombre
+    // PAS d'inversion : bit=0 = blanc (fond), bit=1 = noir (texte)
+    if(lum < 128)
       buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
   }
   return buf;
@@ -784,21 +789,21 @@ function canvasToBitmap(canvas) {
 function buildTSPL() {
   const cv=document.createElement('canvas');
   drawLabel(cv);
-  // Canvas = 640×400 px = 80×50 mm à 203dpi (paysage)
-  // CT221B : SIZE largeur,hauteur → 80 mm large, 50 mm haut
-  // DIRECTION 1 = impression paysage
   const W=cv.width, H=cv.height, bpr=Math.ceil(W/8), bm=canvasToBitmap(cv);
   const enc=new TextEncoder();
+  // CT221B 80×50mm paysage
+  // DIRECTION 0 = sens normal du papier
+  // BITMAP mode 1 = bit 0 = noir (inverse du mode 0) → corrige le négatif
   const hdr=enc.encode(
     `SIZE 80 mm,50 mm\r\n` +
     `GAP 3 mm,0 mm\r\n` +
-    `DIRECTION 1,0\r\n` +
+    `DIRECTION 0,0\r\n` +
     `REFERENCE 0,0\r\n` +
     `OFFSET 0 mm\r\n` +
     `SPEED 4\r\n` +
     `DENSITY 8\r\n` +
     `CLS\r\n` +
-    `BITMAP 0,0,${bpr},${H},0,`
+    `BITMAP 0,0,${bpr},${H},1,`
   );
   const ftr=enc.encode(`\r\nPRINT ${copies},1\r\n`);
   const out=new Uint8Array(hdr.length+bm.length+ftr.length);
