@@ -769,12 +769,13 @@ window.changeCopies=function(d){
 
 // ─── BITMAP → TSPL ─────────────────────────────────────
 function canvasToBitmap(canvas) {
-  const W=canvas.width,H=canvas.height;
+  const W=canvas.width, H=canvas.height;
   const img=canvas.getContext('2d').getImageData(0,0,W,H).data;
   const bpr=Math.ceil(W/8), buf=new Uint8Array(bpr*H);
   for(let r=0;r<H;r++) for(let c=0;c<W;c++){
     const i=(r*W+c)*4;
-    if(.299*img[i]+.587*img[i+1]+.114*img[i+2]<200)
+    // seuil 128 : pixel noir uniquement si vraiment sombre → pas de négatif
+    if(.299*img[i]+.587*img[i+1]+.114*img[i+2] < 128)
       buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
   }
   return buf;
@@ -783,12 +784,25 @@ function canvasToBitmap(canvas) {
 function buildTSPL() {
   const cv=document.createElement('canvas');
   drawLabel(cv);
-  const W=cv.width,H=cv.height,bpr=Math.ceil(W/8),bm=canvasToBitmap(cv);
+  // Canvas = 640×400 px = 80×50 mm à 203dpi (paysage)
+  // CT221B : SIZE largeur,hauteur → 80 mm large, 50 mm haut
+  // DIRECTION 1 = impression paysage
+  const W=cv.width, H=cv.height, bpr=Math.ceil(W/8), bm=canvasToBitmap(cv);
   const enc=new TextEncoder();
-  const hdr=enc.encode(`SIZE 50 mm,80 mm\r\nGAP 3 mm,0 mm\r\nDIRECTION 0,0\r\nREFERENCE 0,0\r\nOFFSET 0 mm\r\nSPEED 4\r\nDENSITY 8\r\nCLS\r\nBITMAP 0,0,${bpr},${H},0,`);
+  const hdr=enc.encode(
+    `SIZE 80 mm,50 mm\r\n` +
+    `GAP 3 mm,0 mm\r\n` +
+    `DIRECTION 1,0\r\n` +
+    `REFERENCE 0,0\r\n` +
+    `OFFSET 0 mm\r\n` +
+    `SPEED 4\r\n` +
+    `DENSITY 8\r\n` +
+    `CLS\r\n` +
+    `BITMAP 0,0,${bpr},${H},0,`
+  );
   const ftr=enc.encode(`\r\nPRINT ${copies},1\r\n`);
   const out=new Uint8Array(hdr.length+bm.length+ftr.length);
-  out.set(hdr,0);out.set(bm,hdr.length);out.set(ftr,hdr.length+bm.length);
+  out.set(hdr,0); out.set(bm,hdr.length); out.set(ftr,hdr.length+bm.length);
   return out;
 }
 
