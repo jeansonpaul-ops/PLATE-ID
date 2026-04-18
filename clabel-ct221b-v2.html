@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Plate ID — LuxVisual</title>
+<meta name="application-name" content="Plate ID">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Plate ID">
+<meta name="theme-color" content="#f5f6fa">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f0f2f7;
+  --surface:  #ffffff;
+  --surface2: #f5f6fa;
+  --border:   #e4e7f0;
+  --shadow:   0 2px 12px rgba(60,70,110,.10);
+  --shadow-lg:0 8px 32px rgba(60,70,110,.14);
+  --accent:   #e8920a;
+  --accent-bg:#fff5e6;
+  --text:     #1a1d2e;
+  --muted:    #8890a8;
+  --green:    #16a34a;
+  --green-bg: #f0fdf4;
+  --red:      #dc2626;
+  --red-bg:   #fef2f2;
+  --amber:    #d97706;
+  --amber-bg: #fffbeb;
+  --mono:     'DM Mono', monospace;
+  --sans:     'DM Sans', sans-serif;
+  --r:        14px;
+  --r-sm:     8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;}
+
+/* ──────────────────────────────────────
+   HEADER
+────────────────────────────────────── */
+header{
+  background:var(--surface);
+  border-bottom:1.5px solid var(--border);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;z-index:100;
+  box-shadow:var(--shadow);
+}
+.logo{
+  display:flex;align-items:center;gap:8px;
+}
+.logo-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(232,146,10,.35);
+}
+.logo-text{font-family:var(--sans);font-weight:900;font-size:17px;color:var(--text);line-height:1;}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.5px;}
+
+.conn-btn{
+  margin-left:auto;
+  display:flex;align-items:center;gap:7px;
+  border-radius:20px;padding:7px 13px;
+  cursor:pointer;transition:all .2s;user-select:none;flex-shrink:0;
+  font-family:var(--sans);font-weight:600;font-size:12px;
+  background:var(--red-bg);border:1.5px solid #fca5a5;color:var(--red);
+}
+.conn-btn.connected{background:var(--green-bg);border-color:#86efac;color:var(--green);}
+.conn-btn:active{opacity:.8;}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.conn-dot.pulse{animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#statusText{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ──────────────────────────────────────
+   TABS
+────────────────────────────────────── */
+.tabs{
+  display:flex;background:var(--surface);
+  border-bottom:1.5px solid var(--border);
+  flex-shrink:0;padding:0 16px;gap:4px;
+}
+.tab{
+  flex:1;font-family:var(--sans);font-weight:700;font-size:13px;
+  padding:11px 0 10px;cursor:pointer;color:var(--muted);
+  border-bottom:2.5px solid transparent;text-align:center;
+  transition:all .18s;user-select:none;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-count{
+  background:var(--accent);color:#fff;
+  font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:10px;
+  display:none;
+}
+.tab.active .tab-count{display:inline;}
+
+/* ──────────────────────────────────────
+   VIEWS
+────────────────────────────────────── */
+.view{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.view.active{display:flex;}
+#view-label{overflow-y:auto;padding-bottom:100px;}
+
+/* ──────────────────────────────────────
+   PREVIEW
+────────────────────────────────────── */
+.preview-section{
+  margin:16px 16px 0;
+  background:var(--surface);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.preview-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px 8px;
+  border-bottom:1px solid var(--border);
+}
+.preview-header-label{
+  font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;
+}
+.preview-size{
+  font-family:var(--mono);font-size:10px;
+  background:var(--surface2);color:var(--muted);
+  padding:3px 8px;border-radius:20px;
+}
+.preview-canvas-wrap{
+  padding:14px;
+  background:repeating-linear-gradient(45deg,#eef0f6,#eef0f6 8px,#e8eaf2 8px,#e8eaf2 16px);
+  display:flex;justify-content:center;
+}
+#previewBox{
+  width:100%;max-width:360px;aspect-ratio:80/50;
+  border:2px solid #dde0ea;border-radius:4px;
+  box-shadow:0 4px 16px rgba(60,70,110,.15);
+  background:#fff;overflow:hidden;
+}
+#previewBox canvas{width:100%;height:100%;display:block;}
+
+/* ──────────────────────────────────────
+   FORM CARDS
+────────────────────────────────────── */
+.form-cards{padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;}
+.card-header{
+  padding:12px 16px 10px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+}
+.card-icon{
+  width:30px;height:30px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;
+}
+.card-title{font-weight:700;font-size:14px;}
+.card-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+
+.field{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+input,select{
+  background:var(--surface2);border:1.5px solid var(--border);
+  color:var(--text);padding:12px 14px;
+  font-family:var(--sans);font-size:15px;font-weight:500;
+  border-radius:var(--r-sm);outline:none;width:100%;
+  -webkit-appearance:none;transition:border-color .2s,box-shadow .2s;
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.12);}
+input::placeholder{color:#c0c5d8;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:2fr 1fr;gap:10px;}
+
+/* ──────────────────────────────────────
+   PRESETS — grandes tuiles colorées
+────────────────────────────────────── */
+.presets-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.preset-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:10px 6px;border-radius:10px;
+  border:2px solid transparent;cursor:pointer;
+  background:var(--surface2);
+  transition:all .15s;user-select:none;
+  font-family:var(--sans);font-weight:700;font-size:12px;color:var(--muted);
+  text-align:center;
+}
+.preset-icon{font-size:20px;line-height:1;}
+.preset-btn.active{color:#fff;border-color:transparent;}
+.preset-btn:active{transform:scale(.96);}
+
+/* ──────────────────────────────────────
+   TOGGLE JOB
+────────────────────────────────────── */
+.toggle-row{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
+.toggle{
+  width:44px;height:26px;background:var(--border);border-radius:13px;
+  position:relative;transition:background .2s;flex-shrink:0;
+}
+.toggle::after{
+  content:'';width:20px;height:20px;background:#fff;
+  border-radius:50%;position:absolute;top:3px;left:3px;
+  transition:transform .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+.toggle.on{background:var(--accent);}
+.toggle.on::after{transform:translateX(18px);}
+.toggle-label{font-size:14px;font-weight:500;color:var(--text);}
+.job-fields{display:flex;flex-direction:column;gap:10px;overflow:hidden;max-height:0;transition:max-height .3s;}
+.job-fields.visible{max-height:200px;}
+
+/* ──────────────────────────────────────
+   COPIES
+────────────────────────────────────── */
+.copies-widget{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.copies-label{font-weight:700;font-size:15px;}
+.qty-ctrl{
+  display:flex;align-items:center;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:12px;overflow:hidden;
+}
+.qty-btn{
+  background:transparent;border:none;
+  color:var(--text);width:44px;height:44px;
+  cursor:pointer;font-size:22px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.qty-btn:active{background:var(--border);}
+.qty-val{
+  font-family:var(--mono);font-size:18px;font-weight:500;
+  color:var(--accent);width:50px;text-align:center;
+}
+
+/* ──────────────────────────────────────
+   HISTORIQUE
+────────────────────────────────────── */
+.hist-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--surface2);border:1.5px solid var(--border);
+  cursor:pointer;transition:border-color .15s;
+  margin-bottom:6px;
+}
+.hist-item:active{border-color:var(--accent);}
+.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.hist-text{flex:1;font-size:13px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-arrow{color:var(--accent);font-size:14px;}
+
+/* ──────────────────────────────────────
+   BOUTON IMPRIMER
+────────────────────────────────────── */
+.print-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:10px 16px 22px;
+  background:linear-gradient(to top,var(--bg) 55%,transparent);
+  z-index:50;
+}
+.btn-print{
+  width:100%;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:16px;
+  padding:18px;
+  font-family:var(--sans);font-weight:900;font-size:17px;
+  letter-spacing:1.5px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  transition:background .15s,transform .1s,box-shadow .15s;
+  box-shadow:0 4px 24px rgba(232,146,10,.4);
+}
+.btn-print:active{transform:scale(.98);box-shadow:0 2px 10px rgba(232,146,10,.3);}
+@supports(padding-bottom:env(safe-area-inset-bottom)){
+  .print-bar{padding-bottom:calc(12px + env(safe-area-inset-bottom));}
+}
+
+/* ──────────────────────────────────────
+   VUE STOCK
+────────────────────────────────────── */
+#view-stock{overflow:hidden;}
+
+.stock-toolbar{
+  background:var(--surface);
+  border-bottom:1.5px solid var(--border);
+  padding:12px 16px;
+  display:flex;flex-direction:column;gap:9px;
+  flex-shrink:0;
+  box-shadow:var(--shadow);
+}
+.search-row{display:flex;gap:8px;}
+.search-wrap{flex:1;position:relative;}
+.search-wrap input{padding-left:38px;height:42px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
+.btn-add{
+  background:var(--accent);color:#fff;border:none;
+  border-radius:10px;padding:0 18px;height:42px;
+  font-family:var(--sans);font-weight:700;font-size:14px;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(232,146,10,.3);
+}
+.btn-add:active{opacity:.85;}
+
+/* Chips famille */
+.fam-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.fam-chips::-webkit-scrollbar{display:none;}
+.fam-chip{
+  font-family:var(--sans);font-weight:700;font-size:12px;
+  border:2px solid var(--border);background:var(--surface);
+  color:var(--muted);
+  padding:5px 13px;border-radius:20px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:all .15s;
+}
+.fam-chip.active{color:#fff;border-color:transparent;}
+.fam-chip:active{opacity:.8;}
+
+/* Filtres état + tri */
+.filter-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.f-chip{
+  font-family:var(--sans);font-weight:600;font-size:12px;
+  border:1.5px solid var(--border);background:var(--surface2);
+  color:var(--muted);padding:5px 11px;border-radius:20px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.f-chip.active{background:var(--surface);border-color:var(--accent);color:var(--accent);}
+.f-chip.state-low.active{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);}
+.f-chip.state-empty.active{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+.stock-stat{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+/* Liste plaques */
+.plates-list{flex:1;overflow-y:auto;padding:12px 16px 16px;}
+
+.plate-card{
+  background:var(--surface);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  padding:12px 14px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:8px;
+  transition:box-shadow .15s;
+  overflow:hidden;
+  position:relative;
+}
+.plate-card::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:5px;
+  border-radius:var(--r) 0 0 var(--r);
+}
+.plate-badge{
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--sans);font-weight:900;font-size:14px;
+  flex-shrink:0;
+}
+.plate-info{flex:1;min-width:0;}
+.plate-mat{font-weight:900;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.plate-sub{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.plate-dim{font-family:var(--mono);font-size:11px;color:#a0a8c0;margin-top:2px;}
+
+.qty-inline{
+  display:flex;align-items:center;border-radius:10px;overflow:hidden;
+  border:1.5px solid var(--border);flex-shrink:0;
+}
+.qi-btn{
+  background:var(--surface2);border:none;
+  width:32px;height:32px;cursor:pointer;
+  font-size:18px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+}
+.qi-btn:active{background:var(--border);}
+.qi-val{
+  font-family:var(--mono);font-size:14px;font-weight:500;
+  width:36px;text-align:center;line-height:32px;
+}
+.qi-val.ok   {color:var(--green);}
+.qi-val.low  {color:var(--amber);}
+.qi-val.empty{color:var(--red);}
+
+.plate-btns{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.pib{
+  border:none;width:32px;height:32px;border-radius:8px;
+  cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.pib:active{opacity:.8;}
+.pib-print{color:#fff;}
+.pib-edit{background:var(--surface2);border:1.5px solid var(--border);color:var(--muted);}
+.pib-del{background:var(--red-bg);border:1.5px solid #fca5a5;color:var(--red);}
+
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 20px;gap:12px;text-align:center;
+}
+.empty-ico{font-size:48px;opacity:.35;}
+.empty-txt{color:var(--muted);font-size:14px;line-height:1.6;}
+
+/* ──────────────────────────────────────
+   MODAL PLAQUE
+────────────────────────────────────── */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(20,24,46,.5);
+  z-index:200;display:none;backdrop-filter:blur(6px);
+}
+.modal-backdrop.show{display:flex;align-items:flex-end;}
+.modal-sheet{
+  background:var(--surface);border-radius:20px 20px 0 0;
+  border-top:1.5px solid var(--border);
+  padding:20px 16px;width:100%;max-height:92vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);
+  padding-bottom:max(20px, env(safe-area-inset-bottom));
+}
+.modal-backdrop.show .modal-sheet{transform:translateY(0);}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-weight:900;font-size:22px;margin-bottom:16px;}
+.modal-fields{display:flex;flex-direction:column;gap:12px;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;}
+.modal-ok{flex:1;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--sans);font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 2px 12px rgba(232,146,10,.3);}
+.modal-ok:active{opacity:.9;}
+.modal-cancel{background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);border-radius:12px;padding:15px 20px;font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer;}
+
+/* ──────────────────────────────────────
+   SHEET CONNEXION
+────────────────────────────────────── */
+.sheet-backdrop{position:fixed;inset:0;background:rgba(20,24,46,.5);z-index:300;display:none;backdrop-filter:blur(6px);}
+.sheet-backdrop.show{display:block;}
+.conn-sheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-radius:20px 20px 0 0;
+  border-top:1.5px solid var(--border);
+  padding:20px 16px max(24px,env(safe-area-inset-bottom));
+  z-index:301;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;gap:12px;
+}
+.conn-sheet.show{transform:translateY(0);}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 6px;}
+.conn-title{font-weight:900;font-size:21px;}
+.conn-sub{font-size:13px;color:var(--muted);}
+
+.conn-option{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;border-radius:14px;cursor:pointer;
+  border:2px solid var(--border);background:var(--surface2);
+  transition:all .15s;
+}
+.conn-option:active{opacity:.8;}
+.conn-option.ble{border-color:#bfdbfe;background:#eff6ff;}
+.conn-option-icon{font-size:24px;flex-shrink:0;}
+.conn-option-text strong{font-weight:700;font-size:15px;display:block;}
+.conn-option-text span{font-size:12px;color:var(--muted);}
+
+.proxy-wrap{display:flex;flex-direction:column;gap:8px;}
+.proxy-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.proxy-row{display:flex;gap:8px;}
+.proxy-input{
+  flex:1;background:var(--surface2);border:1.5px solid var(--border);
+  color:var(--text);padding:12px 14px;
+  font-family:var(--mono);font-size:14px;border-radius:var(--r-sm);outline:none;
+}
+.proxy-input:focus{border-color:var(--accent);}
+.proxy-ok{
+  background:var(--text);color:#fff;border:none;
+  border-radius:var(--r-sm);padding:0 18px;
+  font-family:var(--sans);font-weight:700;font-size:14px;cursor:pointer;
+}
+.proxy-ok:active{opacity:.8;}
+#proxyTestResult{font-size:12px;color:var(--muted);}
+.conn-close{
+  background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);
+  border-radius:12px;padding:13px;font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer;
+}
+
+/* ──────────────────────────────────────
+   TOAST
+────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:88px;left:50%;
+  transform:translateX(-50%) translateY(30px);
+  background:var(--text);color:#fff;
+  font-family:var(--sans);font-weight:600;font-size:13px;
+  padding:10px 20px;border-radius:20px;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;
+  z-index:400;pointer-events:none;opacity:0;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+@media(min-width:500px){
+  #view-label,.form-cards,.print-bar{max-width:500px;margin-left:auto;margin-right:auto;}
+  .preview-section{max-width:calc(500px - 0px);margin:16px auto 0;}
+  .print-bar{left:50%;transform:translateX(-50%);border-radius:16px 16px 0 0;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏷</div>
+    <div>
+      <div class="logo-text">Plate ID</div>
+      <div class="logo-sub">CT221B · LuxVisual</div>
+    </div>
+  </div>
+  <button class="conn-btn" id="printerPill" onclick="openConnSheet()">
+    <div class="conn-dot" id="statusDot"></div>
+    <span id="statusText">Connecter</span>
+  </button>
+</header>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <div class="tab active" id="tab-label" onclick="switchTab('label')">
+    🏷 Étiquette
+  </div>
+  <div class="tab" id="tab-stock" onclick="switchTab('stock')">
+    📦 Stock <span class="tab-count" id="stockCount">0</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     VUE ÉTIQUETTE
+══════════════════════════════════════ -->
+<div class="view active" id="view-label">
+
+  <!-- Aperçu étiquette -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <span class="preview-header-label">Aperçu étiquette</span>
+      <span class="preview-size">80 × 50 mm</span>
+    </div>
+    <div class="preview-canvas-wrap">
+      <div id="previewBox"><canvas id="cvPreview"></canvas></div>
+    </div>
+  </div>
+
+  <div class="form-cards">
+
+    <!-- MATIÈRE -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#fff5e6;">🧱</div>
+        <span class="card-title">Matière</span>
+      </div>
+      <div class="card-body">
+        <div class="presets-grid" id="presetsRow"></div>
+        <div class="field">
+          <div class="field-label">Nom personnalisé</div>
+          <input type="text" id="matiere" placeholder="DIBOND, PVC, MDF…" autocomplete="off" autocorrect="off" autocapitalize="characters" oninput="onField()">
+        </div>
+        <div class="field">
+          <div class="field-label">Couleur / Finition</div>
+          <input type="text" id="couleur" placeholder="Blanc, RAL 9016, Brossé…" autocomplete="off" oninput="onField()">
+        </div>
+        <div class="row3">
+          <div class="field">
+            <div class="field-label">Épaisseur</div>
+            <input type="number" id="epaisseur" placeholder="0" min="0" step="0.5" inputmode="decimal" oninput="onField()">
+          </div>
+          <div class="field">
+            <div class="field-label">Unité</div>
+            <select id="unite" onchange="onField()">
+              <option value="mm">mm</option><option value="cm">cm</option>
+              <option value="µm">µm</option><option value="in">in</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIMENSIONS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#f0f9ff;">📐</div>
+        <span class="card-title">Dimensions</span>
+      </div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field"><div class="field-label">Hauteur</div><input type="number" id="dimH" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
+          <div class="field"><div class="field-label">Longueur</div><input type="number" id="dimL" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
+        </div>
+        <div class="field" style="width:130px;">
+          <div class="field-label">Unité dim.</div>
+          <select id="uniteD" onchange="onField()">
+            <option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOB -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#f0fdf4;">📋</div>
+        <span class="card-title">Infos de job</span>
+      </div>
+      <div class="card-body">
+        <div class="toggle-row" onclick="toggleJob()">
+          <div class="toggle" id="jobToggle"></div>
+          <span class="toggle-label">Inclure un numéro de job</span>
+        </div>
+        <div class="job-fields" id="jobFields">
+          <div class="field"><div class="field-label">Nom du job</div><input type="text" id="jobName" placeholder="FACADE OUEST" autocapitalize="characters" oninput="onField()"></div>
+          <div class="field"><div class="field-label">N° de job</div><input type="text" id="jobNum" placeholder="JOB-2024-001" oninput="onField()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COPIES -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#faf5ff;">🖨</div>
+        <span class="card-title">Copies</span>
+      </div>
+      <div class="card-body">
+        <div class="copies-widget">
+          <span class="copies-label">Nombre d'étiquettes</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeCopies(-1)">−</button>
+            <div class="qty-val" id="copiesVal">1</div>
+            <button class="qty-btn" onclick="changeCopies(1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#fef9ee;">🕐</div>
+        <span class="card-title">Historique</span>
+      </div>
+      <div class="card-body" id="histList">
+        <div style="font-size:13px;color:var(--muted);">Aucune impression récente</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOUTON IMPRIMER FIXE -->
+<div class="print-bar" id="printBar">
+  <button class="btn-print" onclick="doPrint()">
+    🖨 &nbsp;IMPRIMER
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════
+     VUE STOCK
+══════════════════════════════════════ -->
+<div class="view" id="view-stock">
+
+  <div class="stock-toolbar">
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="stockSearch" placeholder="Rechercher matière, couleur…" autocomplete="off" oninput="renderStock()">
+      </div>
+      <button class="btn-add" onclick="openAddModal()">＋ Ajouter</button>
+    </div>
+    <div class="fam-chips" id="familyChips"></div>
+    <div class="filter-row">
+      <button class="f-chip active" id="fc-all"   onclick="setStateFilter('all')">Tout</button>
+      <button class="f-chip state-low"   id="fc-low"   onclick="setStateFilter('low')">🟡 Bas</button>
+      <button class="f-chip state-empty" id="fc-empty" onclick="setStateFilter('empty')">🔴 Épuisé</button>
+      <div style="margin-left:auto;display:flex;gap:5px;">
+        <button class="f-chip" id="sort-mat"  onclick="setSort('mat')">A–Z</button>
+        <button class="f-chip active" id="sort-date" onclick="setSort('date')">Récent</button>
+      </div>
+      <span class="stock-stat" id="stockStats"></span>
+    </div>
+  </div>
+
+  <div class="plates-list" id="platesScroll">
+    <div class="empty-state">
+      <div class="empty-ico">📦</div>
+      <div class="empty-txt">Aucune plaque en stock.<br>Imprimez une étiquette ou ajoutez manuellement.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL AJOUTER / ÉDITER
+══════════════════════════════════════ -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeAddModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Ajouter une plaque</div>
+    <div class="modal-fields">
+      <input type="hidden" id="mId">
+      <div class="field">
+        <div class="field-label">Famille / Matière</div>
+        <select id="mFam" onchange="onMFamChange()">
+          <option value="">-- Sélectionner --</option>
+          <option>Dibond</option><option>PVC</option><option>MDF</option>
+          <option>Plexiglass</option><option>Beelite</option>
+          <option>Polypro Alvéolaire</option><option>Carton E-Golf</option>
+          <option>Palboard</option><option>Papier</option>
+          <option value="__new__">+ Nouvelle famille…</option>
+        </select>
+      </div>
+      <div class="field" id="mNewFamRow" style="display:none;">
+        <div class="field-label">Nom de la famille</div>
+        <input type="text" id="mNewFam" placeholder="ex: Aluminium">
+      </div>
+      <div class="field">
+        <div class="field-label">Couleur / Finition</div>
+        <input type="text" id="mCouleur" placeholder="Blanc, Brossé, RAL 9016…">
+      </div>
+      <div class="row3">
+        <div class="field"><div class="field-label">Épaisseur</div><input type="number" id="mEp" placeholder="0" min="0" step="0.5" inputmode="decimal"></div>
+        <div class="field"><div class="field-label">Unité</div>
+          <select id="mUnite"><option value="mm">mm</option><option value="cm">cm</option><option value="µm">µm</option></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><div class="field-label">Hauteur</div><input type="number" id="mH" placeholder="0" min="0" inputmode="decimal"></div>
+        <div class="field"><div class="field-label">Longueur</div><input type="number" id="mL" placeholder="0" min="0" inputmode="decimal"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><div class="field-label">Qté en stock</div><input type="number" id="mQty" value="1" min="0" inputmode="numeric"></div>
+        <div class="field"><div class="field-label">Alerte si ≤</div><input type="number" id="mSeuil" value="2" min="0" inputmode="numeric"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeAddModal()">Annuler</button>
+      <button class="modal-ok" onclick="savePlate()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SHEET CONNEXION
+══════════════════════════════════════ -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeConnSheet()"></div>
+<div class="conn-sheet" id="connSheet">
+  <div class="sheet-handle"></div>
+  <div class="conn-title">Imprimante</div>
+  <div class="conn-sub">Choisissez le mode de connexion pour la CT221B</div>
+
+  <div class="conn-option ble" onclick="connectBLE()">
+    <span class="conn-option-icon">📶</span>
+    <div class="conn-option-text">
+      <strong>Bluetooth BLE</strong>
+      <span>Connexion directe depuis mobile ou PC</span>
+    </div>
+  </div>
+
+  <div class="proxy-wrap">
+    <div class="proxy-label">Proxy LAN (Mac / PC)</div>
+    <div class="proxy-row">
+      <input class="proxy-input" type="text" id="proxyInput" placeholder="192.168.1.10:3000">
+      <button class="proxy-ok" onclick="saveProxy()">OK</button>
+    </div>
+    <div id="proxyTestResult"></div>
+  </div>
+
+  <button class="conn-close" onclick="closeConnSheet()">Fermer</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let copies = 1, jobEnabled = false;
+let bleChar = null, bleDevice = null, bleConnected = false;
+let proxyUrl = localStorage.getItem('ct_proxy') || '';
+let hist  = JSON.parse(localStorage.getItem('ct_hist')  || '[]');
+let stock = JSON.parse(localStorage.getItem('ct_stock') || '[]');
+let currentFamily = '', currentStateFilter = 'all', currentSort = 'date';
+
+// ═══════════════════════════════════════════
+// FAMILLES
+// ═══════════════════════════════════════════
+const PRESETS = [
+  {label:'Dibond',  value:'DIBOND',             color:'#2563eb', icon:'🔵'},
+  {label:'PVC',     value:'PVC',                color:'#16a34a', icon:'🟢'},
+  {label:'MDF',     value:'MDF',                color:'#92400e', icon:'🟤'},
+  {label:'Plexi',   value:'PLEXIGLASS',         color:'#0891b2', icon:'🔷'},
+  {label:'Beelite', value:'BEELITE',            color:'#7c3aed', icon:'🟣'},
+  {label:'Polypro', value:'POLYPRO ALVÉOLAIRE', color:'#ea580c', icon:'🟠'},
+  {label:'Carton',  value:'CARTON E-GOLF',      color:'#65a30d', icon:'🟩'},
+  {label:'Palboard',value:'PALBOARD',           color:'#db2777', icon:'🌸'},
+  {label:'Papier',  value:'PAPIER',             color:'#6b7280', icon:'⬜'},
+];
+const PALETTE = ['#e11d48','#ea580c','#d97706','#16a34a','#0891b2','#2563eb','#7c3aed','#db2777','#0f766e','#65a30d','#92400e','#6b7280'];
+const PRESET_MAP = {};
+PRESETS.forEach(p => PRESET_MAP[p.value] = p.color);
+
+function getFamilyColor(name) {
+  if (!name) return '#8890a8';
+  const key = name.toUpperCase();
+  if (PRESET_MAP[key]) return PRESET_MAP[key];
+  let hash = 0;
+  for (let i=0; i<name.length; i++) hash=(hash*31+name.charCodeAt(i))&0xffffffff;
+  return PALETTE[Math.abs(hash)%PALETTE.length];
+}
+
+// ═══════════════════════════════════════════
+// PRESETS UI
+// ═══════════════════════════════════════════
+function buildPresets() {
+  document.getElementById('presetsRow').innerHTML = PRESETS.map((p, i) =>
+    `<button class="preset-btn" onclick="setPreset(${i})">
+      <span class="preset-icon">${p.icon}</span>
+      ${p.label}
+    </button>`
+  ).join('');
+}
+
+function setPreset(i) {
+  const p = PRESETS[i];
+  document.querySelectorAll('.preset-btn').forEach((b, j) => {
+    b.classList.toggle('active', j === i);
+    b.style.background  = j === i ? p.color : '';
+    b.style.borderColor = j === i ? p.color : '';
+    b.style.color       = j === i ? '#fff'  : '';
+  });
+  document.getElementById('matiere').value = p.value;
+  onField();
+}
+
+// ═══════════════════════════════════════════
+// CANVAS DRAW
+// ═══════════════════════════════════════════
+function getFields() {
+  return {
+    mat    : (document.getElementById('matiere').value || '').toUpperCase(),
+    ep     : document.getElementById('epaisseur').value,
+    unite  : document.getElementById('unite').value,
+    couleur: document.getElementById('couleur').value,
+    h      : document.getElementById('dimH').value,
+    lon    : document.getElementById('dimL').value,
+    ud     : document.getElementById('uniteD').value,
+    jn     : jobEnabled ? (document.getElementById('jobName').value||'').toUpperCase() : '',
+    jnum   : jobEnabled ? (document.getElementById('jobNum').value ||'').toUpperCase() : '',
+  };
+}
+
+function drawLabel(canvas) {
+  const W=640,H=400; canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d'); const f=getFields();
+  const hasJob=!!(f.jn||f.jnum); const MX=16;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  let y=10;
+  const ml=(f.mat||'X').length;
+  const matPx=ml<=3?120:ml<=5?96:ml<=8?72:ml<=11?52:ml<=16?38:28;
+  ctx.font=`900 ${matPx}px Arial, sans-serif`; ctx.fillStyle='#000';
+  let matText=f.mat||'MATIÈRE';
+  while(ctx.measureText(matText).width>W-MX*2&&matText.length>1) matText=matText.slice(0,-1);
+  ctx.fillText(matText,MX,y+matPx*.88); y+=matPx+6;
+  ctx.fillStyle='#000'; ctx.fillRect(MX,y,W-MX*2,3); y+=11;
+  if(f.ep){ctx.font='700 36px Arial, sans-serif';ctx.fillStyle='#000';ctx.fillText(`${f.ep} ${f.unite}`,MX,y+32);y+=46;}
+  if(f.couleur){ctx.font='400 28px Arial, sans-serif';ctx.fillStyle='#222';ctx.fillText(`(${f.couleur.toUpperCase()})`,MX,y+26);y+=36;}
+  let dim='';
+  if(f.h)   dim+=`H:${f.h}`;
+  if(f.lon) dim+=(dim?' x ':'')+`L:${f.lon}`;
+  if(dim)   dim+=` ${f.ud}`;
+  if(dim){ctx.font='400 28px Arial, sans-serif';ctx.fillStyle='#222';ctx.fillText(dim,MX,y+26);y+=36;}
+  if(hasJob){
+    const jobBarY=H-(f.jn&&f.jnum?78:48);
+    ctx.fillStyle='#000';ctx.fillRect(MX,jobBarY,W-MX*2,3);
+    let jy=jobBarY+10;
+    if(f.jn){ctx.font='700 30px Arial, sans-serif';ctx.fillStyle='#000';ctx.fillText(f.jn.substring(0,32),MX,jy+26);jy+=36;}
+    if(f.jnum){ctx.font='400 26px Arial, sans-serif';ctx.fillStyle='#333';ctx.fillText(f.jnum.substring(0,32),MX,jy+24);}
+  } else {
+    ctx.fillStyle='#bbb';ctx.fillRect(MX,H-24,W-MX*2,1);
+    ctx.font='400 16px Arial, sans-serif';ctx.fillStyle='#888';
+    ctx.fillText('LuxVisual — Innovative Printing',MX,H-7);
+  }
+}
+
+function updatePreview(){drawLabel(document.getElementById('cvPreview'));}
+function onField(){updatePreview();}
+
+// ═══════════════════════════════════════════
+// BITMAP → TSPL
+// ═══════════════════════════════════════════
+function canvasToBitmap(canvas){
+  const W=canvas.width,H=canvas.height,img=canvas.getContext('2d').getImageData(0,0,W,H).data;
+  const bpr=Math.ceil(W/8),buf=new Uint8Array(bpr*H);
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++){
+    const i=(r*W+c)*4;
+    if(.299*img[i]+.587*img[i+1]+.114*img[i+2]<200) buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
+  }
+  return buf;
+}
+function buildTSPL(){
+  const cv=document.createElement('canvas'); drawLabel(cv);
+  const W=cv.width,H=cv.height,bpr=Math.ceil(W/8),bm=canvasToBitmap(cv);
+  const enc=new TextEncoder();
+  const hdr=enc.encode(`SIZE 50 mm,80 mm\r\nGAP 3 mm,0 mm\r\nDIRECTION 0,0\r\nREFERENCE 0,0\r\nOFFSET 0 mm\r\nCLS\r\nBITMAP 0,0,${bpr},${H},0,`);
+  const ftr=enc.encode(`\r\nPRINT ${copies},1\r\n`);
+  const out=new Uint8Array(hdr.length+bm.length+ftr.length);
+  out.set(hdr,0);out.set(bm,hdr.length);out.set(ftr,hdr.length+bm.length);
+  return out;
+}
+
+// ═══════════════════════════════════════════
+// BLE
+// ═══════════════════════════════════════════
+const BLE_SVCS=['000018f0-0000-1000-8000-00805f9b34fb','e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455','0000ff00-0000-1000-8000-00805f9b34fb'];
+const BLE_CHARS=['00002af1-0000-1000-8000-00805f9b34fb','bef8d6c9-9c21-4c9e-b632-bd58c1009f9f','49535343-8841-43f4-a8d4-ecbe34729bb3','0000ff02-0000-1000-8000-00805f9b34fb'];
+
+async function connectBLE(){
+  if(!navigator.bluetooth){showToast('❌ Chrome requis pour le BLE');return;}
+  try{
+    setStatus('searching');
+    bleDevice=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BLE_SVCS});
+    bleDevice.addEventListener('gattserverdisconnected',()=>{bleConnected=false;bleChar=null;setStatus('disconnected');showToast('⚠ Imprimante déconnectée');});
+    setStatus('connecting');
+    const server=await bleDevice.gatt.connect();
+    let svcs=[];try{svcs=await server.getPrimaryServices();}catch(e){}
+    for(const s of svcs){try{const cs=await s.getCharacteristics();for(const c of cs)if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}if(bleChar)break;}catch(e){}}
+    if(!bleChar){for(const su of BLE_SVCS){try{const s=await server.getPrimaryService(su);for(const cu of BLE_CHARS){try{const c=await s.getCharacteristic(cu);if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}}catch(e){}}if(bleChar)break;}catch(e){}}}
+    if(!bleChar){showToast('❌ Service BLE non trouvé');setStatus('error');return;}
+    bleConnected=true;setStatus('ok_ble',bleDevice.name||'CT221B');
+    closeConnSheet();showToast(`✅ ${bleDevice.name||'CT221B'} connectée !`);
+  }catch(e){if(e.name!=='NotFoundError')showToast('❌ '+e.message);setStatus('disconnected');}
+}
+
+async function bleWrite(data){
+  const CHUNK=128;
+  for(let i=0;i<data.length;i+=CHUNK){await bleChar.writeValue(data.slice(i,i+CHUNK));await new Promise(r=>setTimeout(r,20));}
+}
+
+// ═══════════════════════════════════════════
+// PROXY
+// ═══════════════════════════════════════════
+function getProxyBase(){
+  if(!proxyUrl)return null;
+  let u=proxyUrl.trim();if(!u.startsWith('http'))u='http://'+u;
+  return u.replace(/\/$/,'');
+}
+async function printViaProxy(){
+  const base=getProxyBase();if(!base)throw new Error('Proxy non configuré');
+  const cv=document.createElement('canvas');drawLabel(cv);
+  const b64=btoa(String.fromCharCode(...canvasToBitmap(cv)));
+  const resp=await fetch(`${base}/print`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bitmap:b64,width:cv.width,height:cv.height,copies}),signal:AbortSignal.timeout(12000)});
+  const res=await resp.json();if(!res.ok)throw new Error(res.error||'Erreur proxy');
+}
+async function saveProxy(){
+  const val=document.getElementById('proxyInput').value.trim();
+  proxyUrl=val;
+  const res=document.getElementById('proxyTestResult');
+  if(val){
+    localStorage.setItem('ct_proxy',val);
+    res.style.display='block';res.textContent='🔍 Test en cours…';res.style.color='var(--muted)';
+    try{
+      let u=val;if(!u.startsWith('http'))u='http://'+u;
+      const r=await fetch(`${u.replace(/\/$/,'')}/status`,{signal:AbortSignal.timeout(4000)});
+      const j=await r.json();
+      if(j.ok){res.textContent=`✅ Connecté — ${j.dymo||'OK'}`;res.style.color='var(--green)';setStatus('ok_proxy',val);setTimeout(closeConnSheet,800);}
+      else{res.textContent='⚠ Proxy répond mais erreur';res.style.color='var(--amber)';}
+    }catch(e){res.textContent='❌ Injoignable — vérifiez IP et server.js';res.style.color='var(--red)';}
+  }else{localStorage.removeItem('ct_proxy');setStatus('disconnected');closeConnSheet();}
+}
+
+// ═══════════════════════════════════════════
+// IMPRESSION + AUTO STOCK
+// ═══════════════════════════════════════════
+async function doPrint(){
+  const mat=document.getElementById('matiere').value;
+  if(!mat){showToast('⚠ Entrez le nom de la matière');return;}
+  const ep=document.getElementById('epaisseur').value,unite=document.getElementById('unite').value;
+  const couleur=document.getElementById('couleur').value,h=document.getElementById('dimH').value;
+  const lon=document.getElementById('dimL').value,ud=document.getElementById('uniteD').value;
+  addToHist(mat,ep,unite);
+  let ok=false;
+  if(bleConnected&&bleChar){
+    try{showToast('🖨 Rendu bitmap…');const data=buildTSPL();showToast(`📡 Envoi BLE…`);await bleWrite(data);showToast(`✅ ${copies} étiquette(s) !`);ok=true;}
+    catch(e){showToast('❌ '+e.message);}
+  }else if(proxyUrl){
+    try{showToast('📡 Envoi proxy…');await printViaProxy();showToast(`✅ ${copies} étiquette(s) !`);ok=true;}
+    catch(e){showToast('❌ '+(e.name==='TimeoutError'?'Timeout':e.message));}
+  }else{openConnSheet();return;}
+  if(ok) autoSaveToStock(mat,ep,unite,couleur,h,lon,ud);
+}
+
+function autoSaveToStock(mat,ep,unite,couleur,h,lon,ud){
+  const famille=mat.charAt(0)+mat.slice(1).toLowerCase();
+  const existing=stock.find(p=>p.famille.toUpperCase()===mat&&String(p.ep)===String(ep)&&(p.couleur||'').toUpperCase()===(couleur||'').toUpperCase());
+  if(existing){existing.lastPrint=Date.now();saveStock();}
+  else{
+    stock.unshift({id:Date.now().toString(),famille,couleur:couleur||'',ep:parseFloat(ep)||0,unite:unite||'mm',h:h||'',l:lon||'',ud:ud||'mm',qty:1,seuil:2,lastPrint:Date.now()});
+    saveStock();showToast(`📦 "${famille}" ajouté au stock`);
+  }
+  updateTabCount();
+}
+
+// ═══════════════════════════════════════════
+// STOCK CRUD
+// ═══════════════════════════════════════════
+function saveStock(){localStorage.setItem('ct_stock',JSON.stringify(stock));}
+
+function updateTabCount(){
+  const el=document.getElementById('stockCount');
+  el.textContent=stock.length;
+  el.style.display=stock.length?'inline':'none';
+}
+
+function openAddModal(plateId){
+  ['mId','mNewFam','mCouleur','mEp','mH','mL'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mFam').value='';
+  document.getElementById('mQty').value='1';
+  document.getElementById('mSeuil').value='2';
+  document.getElementById('mNewFamRow').style.display='none';
+  document.getElementById('modalTitle').textContent='Ajouter une plaque';
+  if(plateId){
+    const p=stock.find(x=>x.id===plateId);
+    if(p){
+      document.getElementById('mId').value=p.id;
+      document.getElementById('modalTitle').textContent='Modifier la plaque';
+      const opt=[...document.getElementById('mFam').options].find(o=>o.value.toUpperCase()===p.famille.toUpperCase());
+      document.getElementById('mFam').value=opt?opt.value:'__new__';
+      if(!opt){document.getElementById('mNewFamRow').style.display='';document.getElementById('mNewFam').value=p.famille;}
+      document.getElementById('mCouleur').value=p.couleur||'';
+      document.getElementById('mEp').value=p.ep||'';
+      document.getElementById('mUnite').value=p.unite||'mm';
+      document.getElementById('mH').value=p.h||'';
+      document.getElementById('mL').value=p.l||'';
+      document.getElementById('mQty').value=p.qty||0;
+      document.getElementById('mSeuil').value=p.seuil||2;
+    }
+  }
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+
+function closeAddModal(e){
+  if(e&&e.target!==document.getElementById('modalBackdrop'))return;
+  document.getElementById('modalBackdrop').classList.remove('show');
+}
+
+function onMFamChange(){
+  document.getElementById('mNewFamRow').style.display=document.getElementById('mFam').value==='__new__'?'':'none';
+}
+
+function savePlate(){
+  let fam=document.getElementById('mFam').value;
+  if(fam==='__new__')fam=document.getElementById('mNewFam').value.trim();
+  if(!fam){showToast('⚠ Choisissez une famille');return;}
+  const ep=document.getElementById('mEp').value;
+  if(!ep){showToast('⚠ Entrez l\'épaisseur');return;}
+  const id=document.getElementById('mId').value;
+  const plate={id:id||Date.now().toString(),famille:fam,couleur:document.getElementById('mCouleur').value.trim(),ep:parseFloat(ep),unite:document.getElementById('mUnite').value,h:document.getElementById('mH').value||'',l:document.getElementById('mL').value||'',qty:parseInt(document.getElementById('mQty').value)||0,seuil:parseInt(document.getElementById('mSeuil').value)||2,lastPrint:Date.now()};
+  if(id){const idx=stock.findIndex(x=>x.id===id);if(idx>=0)stock[idx]=plate;}
+  else stock.unshift(plate);
+  saveStock();document.getElementById('modalBackdrop').classList.remove('show');renderStock();updateTabCount();
+  showToast(`✅ ${fam} ${ep}${plate.unite} enregistré`);
+}
+
+function adj(id,d){
+  const p=stock.find(x=>x.id===id);if(!p)return;
+  p.qty=Math.max(0,p.qty+d);saveStock();renderStock();
+  if(p.qty===0)showToast(`🔴 ${p.famille} — épuisé !`);
+  else if(p.qty<=p.seuil)showToast(`🟡 Stock bas : ${p.qty} restante(s)`);
+}
+
+function delPlate(id){
+  if(!confirm('Supprimer cette plaque ?'))return;
+  stock=stock.filter(x=>x.id!==id);saveStock();renderStock();updateTabCount();
+}
+
+function printFromStock(id){
+  const p=stock.find(x=>x.id===id);if(!p)return;
+  document.getElementById('matiere').value=p.famille.toUpperCase();
+  document.getElementById('epaisseur').value=p.ep;
+  document.getElementById('unite').value=p.unite;
+  document.getElementById('couleur').value=p.couleur||'';
+  document.getElementById('dimH').value=p.h||'';
+  document.getElementById('dimL').value=p.l||'';
+  document.getElementById('uniteD').value=p.ud||'mm';
+  document.querySelectorAll('.preset-btn').forEach((b,j)=>{
+    const m=PRESETS[j]&&PRESETS[j].value===p.famille.toUpperCase();
+    b.classList.toggle('active',m);b.style.background=m?PRESETS[j].color:'';b.style.borderColor=m?PRESETS[j].color:'';b.style.color=m?'#fff':'';
+  });
+  updatePreview();switchTab('label');showToast('✓ Données chargées');
+}
+
+// ═══════════════════════════════════════════
+// STOCK RENDER + FILTRES
+// ═══════════════════════════════════════════
+function setStateFilter(f){
+  currentStateFilter=f;
+  ['all','low','empty'].forEach(x=>document.getElementById('fc-'+x).classList.toggle('active',x===f));
+  renderStock();
+}
+function setSort(s){
+  currentSort=s;
+  ['mat','date'].forEach(x=>document.getElementById('sort-'+x).classList.toggle('active',x===s));
+  renderStock();
+}
+
+function renderFamilyChips(){
+  const fams=[...new Set(stock.map(p=>p.famille))].sort();
+  const wrap=document.getElementById('familyChips');
+  const allActive=!currentFamily;
+  wrap.innerHTML=`<button class="fam-chip ${allActive?'active':''}" onclick="setFamilyFilter('')" style="${allActive?'background:var(--accent);border-color:var(--accent);color:#fff;':''}">Toutes</button>`+
+    fams.map(f=>{
+      const col=getFamilyColor(f),active=currentFamily===f;
+      return `<button class="fam-chip ${active?'active':''}" onclick="setFamilyFilter('${f.replace(/'/g,"\\'")}')"
+        style="${active?`background:${col};border-color:${col};color:#fff;`:`border-color:${col}55;color:${col};`}">${f}</button>`;
+    }).join('');
+}
+
+function setFamilyFilter(f){currentFamily=f;renderStock();}
+
+function renderStock(){
+  renderFamilyChips();
+  const search=(document.getElementById('stockSearch').value||'').toLowerCase();
+  let plates=[...stock];
+  if(currentFamily) plates=plates.filter(p=>p.famille===currentFamily);
+  if(currentStateFilter==='low')   plates=plates.filter(p=>p.qty>0&&p.qty<=p.seuil);
+  if(currentStateFilter==='empty') plates=plates.filter(p=>p.qty===0);
+  if(search) plates=plates.filter(p=>p.famille.toLowerCase().includes(search)||(p.couleur||'').toLowerCase().includes(search)||String(p.ep).includes(search)||String(p.h||'').includes(search)||String(p.l||'').includes(search));
+  if(currentSort==='mat') plates.sort((a,b)=>a.famille.localeCompare(b.famille)||a.ep-b.ep);
+  else plates.sort((a,b)=>(b.lastPrint||0)-(a.lastPrint||0));
+
+  const totalQty=stock.reduce((s,p)=>s+p.qty,0);
+  document.getElementById('stockStats').textContent=`${stock.length} réf · ${totalQty} pcs`;
+
+  const scroll=document.getElementById('platesScroll');
+  if(!plates.length){
+    scroll.innerHTML=`<div class="empty-state"><div class="empty-ico">${search||currentFamily||currentStateFilter!=='all'?'🔍':'📦'}</div><div class="empty-txt">${search||currentFamily?'Aucun résultat pour cette recherche.':'Aucune plaque en stock.<br>Imprimez une étiquette ou ajoutez manuellement.'}</div></div>`;
+    return;
+  }
+  scroll.innerHTML=plates.map(p=>{
+    const empty=p.qty===0,low=p.qty>0&&p.qty<=p.seuil;
+    const qc=empty?'empty':low?'low':'ok';
+    const col=getFamilyColor(p.famille);
+    let dim='';
+    if(p.h) dim+=`H:${p.h}`;
+    if(p.l) dim+=(dim?' × ':'')+`L:${p.l}`;
+    if(dim) dim+=` ${p.ud||'mm'}`;
+    const abbr=p.famille.substring(0,2).toUpperCase();
+    return `<div class="plate-card" style="padding-left:20px;">
+      <div class="plate-card-bar" style="position:absolute;left:0;top:0;bottom:0;width:5px;background:${col};border-radius:var(--r) 0 0 var(--r);"></div>
+      <div class="plate-badge" style="background:${col}18;color:${col};">${abbr}</div>
+      <div class="plate-info">
+        <div class="plate-mat" style="color:${col};">${p.famille}</div>
+        <div class="plate-sub">${p.ep} ${p.unite}${p.couleur?' · '+p.couleur:''}</div>
+        ${dim?`<div class="plate-dim">${dim}</div>`:''}
+      </div>
+      <div class="qty-inline">
+        <button class="qi-btn" onclick="adj('${p.id}',-1)">−</button>
+        <div class="qi-val ${qc}">${p.qty}</div>
+        <button class="qi-btn" onclick="adj('${p.id}',+1)">+</button>
+      </div>
+      <div class="plate-btns">
+        <button class="pib pib-print" style="background:${col};" onclick="printFromStock('${p.id}')">🖨</button>
+        <button class="pib pib-edit" onclick="openAddModal('${p.id}')">✏️</button>
+        <button class="pib pib-del" onclick="delPlate('${p.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function switchTab(t){
+  document.getElementById('tab-label').classList.toggle('active',t==='label');
+  document.getElementById('tab-stock').classList.toggle('active',t==='stock');
+  document.getElementById('view-label').classList.toggle('active',t==='label');
+  document.getElementById('view-stock').classList.toggle('active',t==='stock');
+  document.getElementById('printBar').style.display=t==='label'?'':'none';
+  if(t==='stock')renderStock();
+}
+
+// ═══════════════════════════════════════════
+// HISTORIQUE
+// ═══════════════════════════════════════════
+function addToHist(mat,ep,unite){
+  const ts=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  hist.unshift({mat,ep,unite,ts});if(hist.length>6)hist.pop();
+  localStorage.setItem('ct_hist',JSON.stringify(hist));renderHist();
+}
+function renderHist(){
+  const el=document.getElementById('histList');
+  if(!hist.length){el.innerHTML='<div style="font-size:13px;color:var(--muted);">Aucune impression récente</div>';return;}
+  el.innerHTML=hist.map((h,i)=>{
+    const col=PRESET_MAP[h.mat]||getFamilyColor(h.mat);
+    return `<div class="hist-item" onclick="reloadHist(${i})">
+      <div class="hist-dot" style="background:${col};"></div>
+      <div class="hist-text">${h.mat}${h.ep?' — '+h.ep+h.unite:''} · ${h.ts}</div>
+      <span class="hist-arrow">↩</span>
+    </div>`;
+  }).join('');
+}
+function reloadHist(i){
+  const h=hist[i];
+  document.getElementById('matiere').value=h.mat;
+  document.getElementById('epaisseur').value=h.ep||'';
+  document.getElementById('unite').value=h.unite||'mm';
+  document.querySelectorAll('.preset-btn').forEach((b,j)=>{
+    const m=PRESETS[j]&&PRESETS[j].value===h.mat;
+    b.classList.toggle('active',m);b.style.background=m?PRESETS[j].color:'';b.style.borderColor=m?PRESETS[j].color:'';b.style.color=m?'#fff':'';
+  });
+  onField();showToast('↩ Rechargé');
+}
+
+// ═══════════════════════════════════════════
+// STATUS
+// ═══════════════════════════════════════════
+function setStatus(state,detail){
+  const dot=document.getElementById('statusDot'),text=document.getElementById('statusText'),pill=document.getElementById('printerPill');
+  dot.classList.remove('pulse');
+  if(state==='ok_ble'||state==='ok_proxy'){
+    dot.style.color='';pill.classList.add('connected');
+    text.textContent=detail||'Connectée';
+  }else if(state==='searching'||state==='connecting'){
+    dot.classList.add('pulse');pill.classList.remove('connected');
+    text.textContent=state==='searching'?'Recherche…':'Connexion…';
+  }else if(state==='error'){
+    pill.classList.remove('connected');text.textContent='Erreur';
+  }else{
+    pill.classList.remove('connected');text.textContent='Connecter';
+  }
+}
+
+// ═══════════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════════
+function openConnSheet(){
+  document.getElementById('proxyInput').value=proxyUrl;
+  document.getElementById('proxyTestResult').style.display='none';
+  document.getElementById('sheetBackdrop').classList.add('show');
+  document.getElementById('connSheet').classList.add('show');
+}
+function closeConnSheet(){
+  document.getElementById('sheetBackdrop').classList.remove('show');
+  document.getElementById('connSheet').classList.remove('show');
+}
+function toggleJob(){
+  jobEnabled=!jobEnabled;
+  document.getElementById('jobToggle').classList.toggle('on',jobEnabled);
+  document.getElementById('jobFields').classList.toggle('visible',jobEnabled);
+  onField();
+}
+function changeCopies(d){copies=Math.max(1,Math.min(99,copies+d));document.getElementById('copiesVal').textContent=copies;}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+let _sy=0;
+document.getElementById('connSheet').addEventListener('touchstart',e=>{_sy=e.touches[0].clientY;},{passive:true});
+document.getElementById('connSheet').addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-_sy>60)closeConnSheet();},{passive:true});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+buildPresets();
+updatePreview();
+renderHist();
+renderStock();
+updateTabCount();
+if(proxyUrl)setStatus('ok_proxy',proxyUrl);
+</script>
+</body>
+</html>
