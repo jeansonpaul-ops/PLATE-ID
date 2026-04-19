@@ -720,40 +720,126 @@ function getFields() {
 }
 
 function drawLabel(canvas) {
-  const W=640, H=400;
+  // CT221B : rouleau 50mm de large, étiquette 80mm de long
+  // Portrait natif : 400px large × 640px haut (203dpi)
+  const W=400, H=640;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
-  const f=getFields(), hasJob=!!(f.jn||f.jnum), MX=16;
+  const f=getFields(), hasJob=!!(f.jn||f.jnum), MX=20;
+
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-  let y=10;
+
+  let y=16;
+
+  // MATIÈRE — taille auto selon longueur
   const ml=(f.mat||'X').length;
-  const matPx=ml<=3?120:ml<=5?96:ml<=8?72:ml<=11?52:ml<=16?38:28;
-  ctx.font=`900 ${matPx}px Arial,sans-serif`; ctx.fillStyle='#000';
+  const matPx=ml<=3?110:ml<=5?88:ml<=8?66:ml<=11?50:ml<=16?36:26;
+  ctx.font=`900 ${matPx}px Arial,sans-serif`;
+  ctx.fillStyle='#000';
   let matText=f.mat||'MATIÈRE';
   while(ctx.measureText(matText).width>W-MX*2&&matText.length>1) matText=matText.slice(0,-1);
-  ctx.fillText(matText,MX,y+matPx*.88); y+=matPx+6;
-  ctx.fillStyle='#000'; ctx.fillRect(MX,y,W-MX*2,3); y+=11;
-  if(f.ep){ctx.font='700 36px Arial,sans-serif';ctx.fillStyle='#000';ctx.fillText(`${f.ep} ${f.unite}`,MX,y+32);y+=46;}
-  if(f.couleur){ctx.font='400 28px Arial,sans-serif';ctx.fillStyle='#222';ctx.fillText(`(${f.couleur.toUpperCase()})`,MX,y+26);y+=36;}
+  ctx.fillText(matText,MX,y+matPx*.88);
+  y+=matPx+8;
+
+  // SÉPARATEUR
+  ctx.fillStyle='#000'; ctx.fillRect(MX,y,W-MX*2,3); y+=14;
+
+  // ÉPAISSEUR
+  if(f.ep){
+    ctx.font='700 48px Arial,sans-serif'; ctx.fillStyle='#000';
+    ctx.fillText(`${f.ep} ${f.unite}`,MX,y+44); y+=62;
+  }
+
+  // COULEUR
+  if(f.couleur){
+    ctx.font='400 36px Arial,sans-serif'; ctx.fillStyle='#222';
+    ctx.fillText(`(${f.couleur.toUpperCase()})`,MX,y+32); y+=46;
+  }
+
+  // DIMENSIONS
   let dim='';
   if(f.h)   dim+=`H:${f.h}`;
   if(f.lon) dim+=(dim?' x ':'')+`L:${f.lon}`;
   if(dim)   dim+=` ${f.ud}`;
-  if(dim){ctx.font='400 28px Arial,sans-serif';ctx.fillStyle='#222';ctx.fillText(dim,MX,y+26);y+=36;}
+  if(dim){
+    ctx.font='400 36px Arial,sans-serif'; ctx.fillStyle='#222';
+    ctx.fillText(dim,MX,y+32); y+=46;
+  }
+
+  // JOB
   if(hasJob){
-    const jy0=H-(f.jn&&f.jnum?78:48);
-    ctx.fillStyle='#000';ctx.fillRect(MX,jy0,W-MX*2,3);
-    let jy=jy0+10;
-    if(f.jn){ctx.font='700 30px Arial,sans-serif';ctx.fillStyle='#000';ctx.fillText(f.jn.substring(0,32),MX,jy+26);jy+=36;}
-    if(f.jnum){ctx.font='400 26px Arial,sans-serif';ctx.fillStyle='#333';ctx.fillText(f.jnum.substring(0,32),MX,jy+24);}
+    const jy0=H-(f.jn&&f.jnum?100:60);
+    ctx.fillStyle='#000'; ctx.fillRect(MX,jy0,W-MX*2,3);
+    let jy=jy0+12;
+    if(f.jn){ctx.font='700 38px Arial,sans-serif';ctx.fillStyle='#000';ctx.fillText(f.jn.substring(0,20),MX,jy+32);jy+=46;}
+    if(f.jnum){ctx.font='400 32px Arial,sans-serif';ctx.fillStyle='#333';ctx.fillText(f.jnum.substring(0,22),MX,jy+28);}
   } else {
-    ctx.fillStyle='#bbb';ctx.fillRect(MX,H-24,W-MX*2,1);
-    ctx.font='400 16px Arial,sans-serif';ctx.fillStyle='#888';
-    ctx.fillText('LuxVisual — Innovative Printing',MX,H-7);
+    ctx.fillStyle='#ccc'; ctx.fillRect(MX,H-28,W-MX*2,1);
+    ctx.font='400 20px Arial,sans-serif'; ctx.fillStyle='#999';
+    ctx.fillText('LuxVisual — Innovative Printing',MX,H-8);
   }
 }
 
-function updatePreview(){drawLabel(document.getElementById('cvPreview'));}
+function updatePreview(){
+  const cv=document.getElementById('cvPreview');
+  drawLabel(cv);
+  // Aperçu : on affiche en paysage (pivoté) dans la box preview
+  const box=document.getElementById('previewBox');
+  box.style.aspectRatio='80/50';
+  cv.style.width='100%';
+  cv.style.height='100%';
+  cv.style.transform='rotate(-90deg) translateX(-100%)';
+  cv.style.transformOrigin='top left';
+  cv.style.position='absolute';
+  box.style.position='relative';
+  box.style.overflow='hidden';
+}
+
+function canvasToBitmap(canvas) {
+  const W=canvas.width, H=canvas.height;
+  const img=canvas.getContext('2d').getImageData(0,0,W,H).data;
+  const bpr=Math.ceil(W/8), buf=new Uint8Array(bpr*H);
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++){
+    const i=(r*W+c)*4;
+    const lum=.299*img[i]+.587*img[i+1]+.114*img[i+2];
+    // mode 0 TSPL : bit 1 = NOIR, bit 0 = blanc — texte noir sur fond blanc
+    if(lum < 128)
+      buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
+  }
+  return buf;
+}
+
+function buildTSPL() {
+  const cv=document.createElement('canvas');
+  drawLabelForPrint(cv);
+  const W=cv.width, H=cv.height, bpr=Math.ceil(W/8), bm=canvasToBitmap(cv);
+  const enc=new TextEncoder();
+  // CT221B portrait : 50mm large × 80mm long, 203dpi → 400×640 dots
+  // SIZE : largeur du rouleau × longueur étiquette
+  // BITMAP x,y,widthBytes,heightDots,mode,data
+  // mode 0 : bit1=noir, bit0=blanc
+  const hdr=enc.encode(
+    `SIZE 50 mm,80 mm\r\n` +
+    `GAP 2 mm,0 mm\r\n` +
+    `DIRECTION 0,0\r\n` +
+    `REFERENCE 0,0\r\n` +
+    `OFFSET 0 mm\r\n` +
+    `SPEED 4\r\n` +
+    `DENSITY 8\r\n` +
+    `CLS\r\n` +
+    `BITMAP 0,0,${bpr},${H},0,`
+  );
+  const ftr=enc.encode(`\r\nPRINT ${copies},1\r\n`);
+  const out=new Uint8Array(hdr.length+bm.length+ftr.length);
+  out.set(hdr,0); out.set(bm,hdr.length); out.set(ftr,hdr.length+bm.length);
+  return out;
+}
+
+// Dessine en portrait 400×640 pour impression (sans rotation)
+function drawLabelForPrint(canvas) {
+  drawLabel(canvas);
+}
+
 function onField(){updatePreview();}
 window.onField=onField;
 window.toggleJob=function(){
@@ -766,50 +852,6 @@ window.changeCopies=function(d){
   copies=Math.max(1,Math.min(99,copies+d));
   document.getElementById('copiesVal').textContent=copies;
 };
-
-// ─── BITMAP → TSPL ─────────────────────────────────────
-function canvasToBitmap(canvas) {
-  const W=canvas.width, H=canvas.height;
-  const img=canvas.getContext('2d').getImageData(0,0,W,H).data;
-  const bpr=Math.ceil(W/8), buf=new Uint8Array(bpr*H);
-  for(let r=0;r<H;r++) for(let c=0;c<W;c++){
-    // Rotation 180° : on lit le pixel en sens inverse
-    const rr=H-1-r, rc=W-1-c;
-    const i=(rr*W+rc)*4;
-    const lum=.299*img[i]+.587*img[i+1]+.114*img[i+2];
-    // bit=1 = NOIR sur imprimante TSPL
-    // texte noir sur fond blanc → on met 1 si pixel sombre
-    // PAS d'inversion : bit=0 = blanc (fond), bit=1 = noir (texte)
-    if(lum < 128)
-      buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
-  }
-  return buf;
-}
-
-function buildTSPL() {
-  const cv=document.createElement('canvas');
-  drawLabel(cv);
-  const W=cv.width, H=cv.height, bpr=Math.ceil(W/8), bm=canvasToBitmap(cv);
-  const enc=new TextEncoder();
-  // CT221B 80×50mm paysage
-  // DIRECTION 0 = sens normal du papier
-  // BITMAP mode 1 = bit 0 = noir (inverse du mode 0) → corrige le négatif
-  const hdr=enc.encode(
-    `SIZE 80 mm,50 mm\r\n` +
-    `GAP 3 mm,0 mm\r\n` +
-    `DIRECTION 0,0\r\n` +
-    `REFERENCE 0,0\r\n` +
-    `OFFSET 0 mm\r\n` +
-    `SPEED 4\r\n` +
-    `DENSITY 8\r\n` +
-    `CLS\r\n` +
-    `BITMAP 0,0,${bpr},${H},1,`
-  );
-  const ftr=enc.encode(`\r\nPRINT ${copies},1\r\n`);
-  const out=new Uint8Array(hdr.length+bm.length+ftr.length);
-  out.set(hdr,0); out.set(bm,hdr.length); out.set(ftr,hdr.length+bm.length);
-  return out;
-}
 
 // ─── BLE LOG ───────────────────────────────────────────
 function bleLog(msg, type='info') {
