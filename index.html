@@ -29,8 +29,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex
 
 /* HEADER */
 header{background:var(--surface);border-bottom:1.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;box-shadow:var(--shadow);z-index:100;}
-.logo{display:flex;align-items:center;gap:8px;}
-.logo-icon{width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 8px rgba(232,146,10,.35);}
+.logo{display:flex;align-items:center;gap:10px;}
 .logo-text{font-weight:900;font-size:17px;color:var(--text);line-height:1;}
 .logo-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.5px;}
 .conn-btn{margin-left:auto;display:flex;align-items:center;gap:7px;border-radius:20px;padding:7px 13px;cursor:pointer;transition:all .2s;user-select:none;flex-shrink:0;font-weight:600;font-size:12px;background:var(--red-bg);border:1.5px solid #fca5a5;color:var(--red);}
@@ -247,9 +246,19 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
 <header>
   <div class="logo">
-    <div class="logo-icon">🏷</div>
+    <!-- Logo Plate ID SVG -->
+    <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+      <rect width="38" height="38" rx="9" fill="#1a1d2e"/>
+      <rect x="7" y="11" width="22" height="18" rx="3" fill="#ffffff"/>
+      <rect x="10" y="15" width="12" height="3" rx="1.5" fill="#1a1d2e"/>
+      <rect x="10" y="20" width="9" height="2.5" rx="1.25" fill="#c0c5d8"/>
+      <rect x="10" y="24" width="11" height="2.5" rx="1.25" fill="#c0c5d8"/>
+      <polygon points="24,11 29,11 29,16" fill="#e8920a"/>
+      <polygon points="24,11 29,16 24,16" fill="#f5a832"/>
+      <circle cx="19" cy="32" r="2.5" fill="#e8920a"/>
+    </svg>
     <div>
-      <div class="logo-text">Plate ID</div>
+      <div class="logo-text">Plate <span style="color:var(--accent);">ID</span></div>
       <div class="logo-sub">CT221B · LuxVisual</div>
     </div>
   </div>
@@ -414,6 +423,18 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
   </div>
 </div>
 
+<!-- BANNIÈRE RECONNEXION RAPIDE -->
+<div id="reconnectBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:60;background:#f0fdf4;border-bottom:1.5px solid #86efac;padding:10px 16px;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(22,163,74,.15);">
+  <div style="font-size:18px;">⚡</div>
+  <div style="flex:1;font-family:var(--sans);font-size:13px;font-weight:600;color:#16a34a;">
+    Reconnecter <span id="reconnectBannerName" style="font-weight:900;"></span> ?
+  </div>
+  <button onclick="quickReconnect();hidReconnectBanner();" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;">
+    Connecter
+  </button>
+  <button onclick="hidReconnectBanner();" style="background:transparent;border:none;color:#16a34a;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
+</div>
+
 <!-- BOUTON IMPRIMER -->
 <div class="print-bar" id="printBar">
   <button class="btn-print" id="btnPrint" onclick="doPrint()">🖨 &nbsp;IMPRIMER</button>
@@ -510,10 +531,21 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
   <div class="conn-title">Imprimante CT221B</div>
   <div class="conn-sub">Connexion Bluetooth BLE depuis Chrome mobile ou desktop</div>
 
+  <!-- Bouton reconnexion rapide — visible uniquement si imprimante déjà connue -->
+  <div id="quickReconnectWrap" style="display:none;">
+    <button class="conn-option" style="border-color:#86efac;background:#f0fdf4;" onclick="quickReconnect()">
+      <span class="conn-option-icon">⚡</span>
+      <div class="conn-option-text">
+        <strong id="quickReconnectLabel" style="color:#16a34a;">Reconnecter CT221B</strong>
+        <span>Dernière imprimante utilisée — 1 tap</span>
+      </div>
+    </button>
+  </div>
+
   <div class="conn-option" onclick="connectBLE()">
     <span class="conn-option-icon">📶</span>
     <div class="conn-option-text">
-      <strong>Connecter en Bluetooth</strong>
+      <strong>Nouveau scan Bluetooth</strong>
       <span>Appuyez pour scanner les appareils BLE</span>
     </div>
   </div>
@@ -988,91 +1020,107 @@ const BLE_CHARS=[
   '00002af0-0000-1000-8000-00805f9b34fb',
 ];
 
+// ─── CONNEXION GATT COMMUNE (scan + caractéristique) ───
+async function _gattConnect(server) {
+  let svcs=[];
+  try{svcs=await server.getPrimaryServices();}catch(e){bleLog('getPrimaryServices: '+e.message,'warn');}
+  bleLog(`Services trouvés : ${svcs.length}`);
+  for(const s of svcs){
+    try{
+      const cs=await s.getCharacteristics();
+      for(const c of cs){
+        if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}
+      }
+      if(bleChar)break;
+    }catch(e){}
+  }
+  if(!bleChar){
+    bleLog('Scan UUID explicites…');
+    for(const su of BLE_SVCS){
+      try{
+        const s=await server.getPrimaryService(su);
+        for(const cu of BLE_CHARS){
+          try{
+            const c=await s.getCharacteristic(cu);
+            if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}
+          }catch(e){}
+        }
+        if(bleChar)break;
+      }catch(e){}
+    }
+  }
+}
+
+// ─── FIN DE CONNEXION (commun à tous les chemins) ──────
+async function _finalizeBLEConnect() {
+  // Listener déconnexion — propose reconnexion automatique
+  bleDevice.addEventListener('gattserverdisconnected', async () => {
+    bleConnected=false; bleChar=null;
+    setStatus('disconnected');
+    bleLog('Déconnecté — tentative de reconnexion…','warn');
+    showToast('⚠ Déconnectée — reconnexion…');
+    // Reconnexion silencieuse (l'objet bleDevice est déjà appairé)
+    await new Promise(r=>setTimeout(r,1500));
+    try {
+      const server = await bleDevice.gatt.connect();
+      bleLog('Reconnexion GATT OK','ok');
+      await _gattConnect(server);
+      if(bleChar){
+        bleConnected=true;
+        setStatus('ok_ble', bleDevice.name||'CT221B');
+        showToast(`✅ Reconnectée !`);
+        bleLog('Prêt à imprimer !','ok');
+        hidReconnectBanner();
+      }
+    } catch(e) {
+      bleLog('Reconnexion silencieuse échouée : '+e.message,'warn');
+      showReconnectBanner();
+    }
+  });
+
+  setStatus('connecting');
+  bleLog(`Connexion GATT…`);
+  const server = await bleDevice.gatt.connect();
+  bleLog('GATT connecté','ok');
+  await _gattConnect(server);
+
+  if(!bleChar){
+    bleLog('Aucune caractéristique d\'écriture trouvée','err');
+    showToast('❌ Aucun service BLE compatible');
+    setStatus('error');
+    return;
+  }
+
+  bleConnected=true;
+  const devName = bleDevice.name||'CT221B';
+  localStorage.setItem(LAST_BLE_KEY, devName);
+  updateQuickReconnectBtn();
+  setStatus('ok_ble', devName);
+  showToast(`✅ ${devName} connectée !`);
+  bleLog('Prêt à imprimer !','ok');
+  hidReconnectBanner();
+  closeConnSheet();
+}
+
+// ─── SCAN COMPLET (premier appairage) ─────────────────
 window.connectBLE = async function() {
   if(!navigator.bluetooth){
-    bleLog('Web Bluetooth non disponible. Utilisez Chrome sur Android/desktop.','err');
+    bleLog('Web Bluetooth non disponible. Utilisez Chrome.','err');
     showToast('❌ Chrome requis pour le BLE');
     return;
   }
   document.getElementById('bleLog').innerHTML='';
   bleLog('Ouverture du sélecteur Bluetooth…');
-  try {
+  try{
     setStatus('searching');
-    bleDevice=await navigator.bluetooth.requestDevice({
-      acceptAllDevices:true,
-      optionalServices:BLE_SVCS
+    bleDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices:true, optionalServices:BLE_SVCS
     });
-    bleLog(`Appareil sélectionné : ${bleDevice.name||'(sans nom)'}`, 'ok');
-    bleDevice.addEventListener('gattserverdisconnected',()=>{
-      bleConnected=false;bleChar=null;
-      setStatus('disconnected');
-      bleLog('Déconnecté','warn');
-      showToast('⚠ Imprimante déconnectée');
-    });
-    setStatus('connecting');
-    bleLog('Connexion GATT…');
-    const server=await bleDevice.gatt.connect();
-    bleLog('GATT connecté','ok');
-
-    // Scan services
-    let svcs=[];
-    try{svcs=await server.getPrimaryServices();}catch(e){bleLog('getPrimaryServices: '+e.message,'warn');}
-    bleLog(`Services trouvés : ${svcs.length}`);
-
-    for(const s of svcs){
-      bleLog(`  Service: ${s.uuid}`);
-      try{
-        const cs=await s.getCharacteristics();
-        for(const c of cs){
-          const props=Object.keys(c.properties).filter(k=>c.properties[k]).join(',');
-          bleLog(`    Char: ${c.uuid} [${props}]`);
-          if(c.properties.write||c.properties.writeWithoutResponse){
-            bleChar=c;
-            bleLog(`    ✓ Caractéristique d'écriture sélectionnée`,'ok');
-            break;
-          }
-        }
-        if(bleChar)break;
-      }catch(e){bleLog(`  Erreur chars: ${e.message}`,'warn');}
-    }
-
-    // Fallback UUID explicites
-    if(!bleChar){
-      bleLog('Scan UUID explicites…');
-      for(const su of BLE_SVCS){
-        try{
-          const s=await server.getPrimaryService(su);
-          bleLog(`  Service trouvé: ${su}`,'ok');
-          for(const cu of BLE_CHARS){
-            try{
-              const c=await s.getCharacteristic(cu);
-              if(c.properties.write||c.properties.writeWithoutResponse){
-                bleChar=c;
-                bleLog(`  ✓ Char sélectionnée: ${cu}`,'ok');
-                break;
-              }
-            }catch(e){}
-          }
-          if(bleChar)break;
-        }catch(e){}
-      }
-    }
-
-    if(!bleChar){
-      bleLog('Aucune caractéristique d\'écriture trouvée','err');
-      showToast('❌ Aucun service BLE compatible');
-      setStatus('error');
-      return;
-    }
-
-    bleConnected=true;
-    setStatus('ok_ble',bleDevice.name||'CT221B');
-    showToast(`✅ ${bleDevice.name||'CT221B'} connectée !`);
-    bleLog(`Prêt à imprimer !`,'ok');
-    // Ne pas fermer le sheet pour garder les logs visibles
+    bleLog(`Sélectionné : ${bleDevice.name||'(sans nom)'}`, 'ok');
+    await _finalizeBLEConnect();
   }catch(e){
-    if(e.name==='NotFoundError'){bleLog('Sélection annulée','warn');}
-    else{bleLog('Erreur: '+e.name+' — '+e.message,'err');showToast('❌ '+e.message);}
+    if(e.name==='NotFoundError') bleLog('Sélection annulée','warn');
+    else { bleLog('Erreur: '+e.name+' — '+e.message,'err'); showToast('❌ '+e.message); }
     setStatus('disconnected');
   }
 };
@@ -1485,7 +1533,124 @@ updatePreview();
 renderHist();
 if(proxyUrl) setStatus('ok_proxy', proxyUrl);
 
-// Firestore Rules reminder in console
+// ─── RECONNEXION RAPIDE BLE ────────────────────────────
+// Mémorise le nom de la dernière imprimante BLE utilisée
+const LAST_BLE_KEY = 'ct_last_ble_name';
+
+function updateQuickReconnectBtn() {
+  const name = localStorage.getItem(LAST_BLE_KEY);
+  const wrap = document.getElementById('quickReconnectWrap');
+  const lbl  = document.getElementById('quickReconnectLabel');
+  if (name && navigator.bluetooth) {
+    lbl.textContent = `Reconnecter "${name}"`;
+    wrap.style.display = '';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+window.quickReconnect = async function() {
+  if (!navigator.bluetooth) { showToast('❌ Chrome requis pour le BLE'); return; }
+  const name = localStorage.getItem(LAST_BLE_KEY);
+  document.getElementById('bleLog').innerHTML='';
+  bleLog(`Reconnexion vers "${name}"…`);
+  try {
+    setStatus('searching');
+    // Demande filtrée sur le nom connu → dialog plus rapide
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{name}],
+      optionalServices: BLE_SVCS
+    });
+    await _finalizeBLEConnect();
+  } catch(e) {
+    if (e.name !== 'NotFoundError') {
+      bleLog('Reconnexion filtrée échouée, scan complet…','warn');
+      // Fallback : scan complet
+      try {
+        bleDevice = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true, optionalServices: BLE_SVCS
+        });
+        await _finalizeBLEConnect();
+      } catch(e2) {
+        if (e2.name !== 'NotFoundError') showToast('❌ ' + e2.message);
+        setStatus('disconnected');
+      }
+    } else {
+      setStatus('disconnected');
+    }
+  }
+};
+
+// Factorisation de la connexion GATT (utilisée par connectBLE et quickReconnect)
+async function _finalizeBLEConnect() {
+  bleDevice.addEventListener('gattserverdisconnected', () => {
+    bleConnected=false; bleChar=null;
+    setStatus('disconnected'); showToast('⚠ Imprimante déconnectée');
+    // Propose reconnexion automatique après 2s
+    setTimeout(() => {
+      if (!bleConnected) showReconnectBanner();
+    }, 2000);
+  });
+  setStatus('connecting');
+  bleLog(`Connexion GATT vers ${bleDevice.name||'?'}…`);
+  const server = await bleDevice.gatt.connect();
+  bleLog('GATT connecté','ok');
+  let svcs=[]; try{svcs=await server.getPrimaryServices();}catch(e){}
+  bleLog(`Services: ${svcs.length}`);
+  for(const s of svcs){
+    try{
+      const cs=await s.getCharacteristics();
+      for(const c of cs) if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}
+      if(bleChar)break;
+    }catch(e){}
+  }
+  if(!bleChar){
+    for(const su of BLE_SVCS){
+      try{
+        const s=await server.getPrimaryService(su);
+        for(const cu of BLE_CHARS){
+          try{const c=await s.getCharacteristic(cu);if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}}catch(e){}
+        }
+        if(bleChar)break;
+      }catch(e){}
+    }
+  }
+  if(!bleChar){showToast('❌ Service BLE non trouvé');setStatus('error');return;}
+  bleConnected=true;
+  const devName = bleDevice.name||'CT221B';
+  localStorage.setItem(LAST_BLE_KEY, devName);
+  setStatus('ok_ble', devName);
+  showToast(`✅ ${devName} connectée !`);
+  bleLog(`Prêt à imprimer !`,'ok');
+  updateQuickReconnectBtn();
+  closeConnSheet();
+  hidReconnectBanner();
+}
+
+// ─── BANNIÈRE DE RECONNEXION ───────────────────────────
+function showReconnectBanner() {
+  let banner = document.getElementById('reconnectBanner');
+  if (!banner) return;
+  const name = localStorage.getItem(LAST_BLE_KEY);
+  if (!name || !navigator.bluetooth) return;
+  document.getElementById('reconnectBannerName').textContent = name;
+  banner.style.display = 'flex';
+}
+function hidReconnectBanner() {
+  const b = document.getElementById('reconnectBanner');
+  if (b) b.style.display = 'none';
+}
+
+// Au démarrage : si une imprimante est connue, afficher la bannière après 1s
+setTimeout(() => {
+  const name = localStorage.getItem(LAST_BLE_KEY);
+  if (name && navigator.bluetooth && !bleConnected && !proxyUrl) {
+    showReconnectBanner();
+  }
+}, 1200);
+
+updateQuickReconnectBtn();
+
 console.info('%c📦 Plate ID — Firebase: plate-id-e47c8', 'font-weight:bold;color:#e8920a');
 console.info('Si le stock ne charge pas, vérifiez les règles Firestore:\nallow read, write: if true;');
 
