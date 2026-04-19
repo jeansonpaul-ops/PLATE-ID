@@ -141,6 +141,8 @@ input::placeholder{color:#c0c5d8;}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
 .btn-add{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:0 18px;height:42px;font-family:var(--sans);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(232,146,10,.3);}
 .btn-add:active{opacity:.85;}
+.btn-export{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:0 14px;height:42px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.btn-export:active{opacity:.8;}
 
 /* Sync status */
 .sync-bar{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted);padding:2px 0;}
@@ -348,6 +350,20 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       </div>
     </div>
 
+    <!-- EMPLACEMENT -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#fff0f0;">📍</div>
+        <span class="card-title">Emplacement</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-label">Zone / Rack / Étagère</div>
+          <input type="text" id="emplacement" placeholder="Ex: Rack A3, Étagère 2, Zone Impression…" autocomplete="off" autocapitalize="characters" oninput="onField()">
+        </div>
+      </div>
+    </div>
+
     <!-- JOB -->
     <div class="card">
       <div class="card-header">
@@ -412,6 +428,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         <input type="text" id="stockSearch" placeholder="Rechercher matière, couleur…" autocomplete="off" oninput="renderStock()">
       </div>
       <button class="btn-add" onclick="openAddModal()">＋ Ajouter</button>
+      <button class="btn-export" onclick="exportStock()" title="Exporter le stock">⬇ Export</button>
     </div>
     <div class="sync-bar">
       <div class="sync-dot" id="syncDot"></div>
@@ -473,6 +490,10 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       <div class="row2">
         <div class="field"><div class="field-label">Qté en stock</div><input type="number" id="mQty" value="1" min="0" inputmode="numeric"></div>
         <div class="field"><div class="field-label">Alerte si ≤</div><input type="number" id="mSeuil" value="2" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="field">
+        <div class="field-label">Emplacement</div>
+        <input type="text" id="mEmpl" placeholder="Rack A3, Étagère 2…" autocapitalize="characters">
       </div>
     </div>
     <div class="modal-actions">
@@ -571,6 +592,45 @@ async function fbUpdate(id, data) {
 async function fbDelete(id) {
   await deleteDoc(doc(db, COLL, id));
 }
+
+// ─── EXPORT STOCK ──────────────────────────────────────
+window.exportStock = function() {
+  if (!stock.length) { showToast('⚠ Stock vide, rien à exporter'); return; }
+
+  // Trie par famille puis épaisseur
+  const sorted = [...stock].sort((a,b) => a.famille.localeCompare(b.famille) || a.ep - b.ep);
+
+  // En-têtes CSV
+  const headers = ['Famille','Couleur','Épaisseur','Unité','H','L','Emplacement','Quantité','Alerte ≤','Dernière impression'];
+  const rows = sorted.map(p => {
+    const d = p.lastPrint ? new Date(p.lastPrint).toLocaleDateString('fr-FR') : '';
+    return [
+      p.famille,
+      p.couleur || '',
+      p.ep,
+      p.unite || 'mm',
+      p.h || '',
+      p.l || '',
+      p.emplacement || '',
+      p.qty,
+      p.seuil || 2,
+      d,
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(';');
+  });
+
+  const csv = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n'); // BOM UTF-8 pour Excel
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `LuxVisual_Stock_${date}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ ${sorted.length} références exportées`);
+};
 
 // ─── ICÔNES SVG MATÉRIAUX ──────────────────────────────
 const MAT_ICONS = {
@@ -737,7 +797,8 @@ function getFields() {
     h      : document.getElementById('dimH').value,
     lon    : document.getElementById('dimL').value,
     ud     : document.getElementById('uniteD').value,
-    rem    : (document.getElementById('remarque') ? document.getElementById('remarque').value : '').trim(),
+    rem    : (document.getElementById('remarque')    ? document.getElementById('remarque').value    : '').trim(),
+    empl   : (document.getElementById('emplacement') ? document.getElementById('emplacement').value : '').trim().toUpperCase(),
     jn     : jobEnabled ? (document.getElementById('jobName').value || '').toUpperCase() : '',
     jnum   : jobEnabled ? (document.getElementById('jobNum').value  || '').toUpperCase() : '',
   };
@@ -790,6 +851,14 @@ function drawLabel(canvas) {
     ctx.fillText(dim,MX,y+32); y+=46;
   }
 
+  // EMPLACEMENT — encadré en bas avant le footer
+  if(f.empl){
+    const ey=H-90;
+    ctx.fillStyle='#000'; ctx.fillRect(MX,ey,W-MX*2,2);
+    ctx.font='700 26px Arial,sans-serif'; ctx.fillStyle='#444';
+    ctx.fillText('📍 '+f.empl.substring(0,22),MX,ey+30);
+  }
+
   // REMARQUE
   if(f.rem){
     ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#555';
@@ -838,16 +907,15 @@ function canvasToBitmap(canvas) {
   const W=canvas.width, H=canvas.height;
   const img=canvas.getContext('2d').getImageData(0,0,W,H).data;
   const bpr=Math.ceil(W/8), buf=new Uint8Array(bpr*H);
+  // TSPL mode 0 : bit 1 = point noir, bit 0 = blanc
+  // Canvas : fond blanc (#fff = lum 255), texte noir (#000 = lum 0)
+  // → on met bit=1 uniquement si pixel sombre (lum < 128)
   for(let r=0;r<H;r++) for(let c=0;c<W;c++){
     const i=(r*W+c)*4;
     const lum=.299*img[i]+.587*img[i+1]+.114*img[i+2];
-    // bit 1 = BLANC (fond), bit 0 = NOIR (texte) — inversé par rapport au mode standard
-    // XOR 0xFF appliqué après pour inverser tout le buffer
-    if(lum >= 128)
+    if(lum < 128)
       buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
   }
-  // Inversion globale du bitmap pour corriger le négatif CT221B
-  for(let i=0;i<buf.length;i++) buf[i]^=0xFF;
   return buf;
 }
 
@@ -1120,8 +1188,8 @@ window.doPrint = async function() {
 async function autoSaveToStock(mat, ep, unite, couleur, h, lon, ud) {
   const famille = mat.charAt(0).toUpperCase() + mat.slice(1).toLowerCase();
   const epNum = parseFloat(ep) || 0;
+  const empl = (document.getElementById('emplacement') ? document.getElementById('emplacement').value.trim() : '');
 
-  // Cherche doublon (famille + ep + couleur)
   const existing = stock.find(p =>
     p.famille.toUpperCase() === mat.toUpperCase() &&
     String(p.ep) === String(epNum) &&
@@ -1129,17 +1197,15 @@ async function autoSaveToStock(mat, ep, unite, couleur, h, lon, ud) {
   );
 
   if(existing){
-    // Existe déjà : juste mettre à jour lastPrint
-    try{
-      await fbUpdate(existing.id, {lastPrint: Date.now()});
-    }catch(e){bleLog('Firebase update: '+e.message,'warn');}
+    try{ await fbUpdate(existing.id, {lastPrint: Date.now(), emplacement: empl||existing.emplacement||''}); }
+    catch(e){ bleLog('Firebase update: '+e.message,'warn'); }
   } else {
-    // Nouvelle plaque
     const id = Date.now().toString();
     const plate = {
       famille, couleur: couleur||'',
       ep: epNum, unite: unite||'mm',
       h: h||'', l: lon||'', ud: ud||'mm',
+      emplacement: empl,
       qty: 1, seuil: 2,
       lastPrint: Date.now(),
     };
@@ -1187,7 +1253,7 @@ window.printFromStock = function(id) {
 };
 
 window.openAddModal = function(plateId) {
-  ['mId','mNewFam','mCouleur','mEp','mH','mL'].forEach(id=>document.getElementById(id).value='');
+  ['mId','mNewFam','mCouleur','mEp','mH','mL','mEmpl'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mFam').value='';
   document.getElementById('mQty').value='1';
   document.getElementById('mSeuil').value='2';
@@ -1208,6 +1274,7 @@ window.openAddModal = function(plateId) {
       document.getElementById('mL').value=p.l||'';
       document.getElementById('mQty').value=p.qty??1;
       document.getElementById('mSeuil').value=p.seuil??2;
+      document.getElementById('mEmpl').value=p.emplacement||'';
     }
   }
   document.getElementById('modalBackdrop').classList.add('show');
@@ -1228,10 +1295,11 @@ window.savePlate = async function() {
   if(!ep){showToast('⚠ Entrez l\'épaisseur');return;}
   const id=document.getElementById('mId').value||Date.now().toString();
   const plate={
-    famille:fam,couleur:document.getElementById('mCouleur').value.trim(),
-    ep:parseFloat(ep),unite:document.getElementById('mUnite').value,
-    h:document.getElementById('mH').value||'',l:document.getElementById('mL').value||'',
-    ud:'mm',qty:parseInt(document.getElementById('mQty').value)||0,
+    famille:fam, couleur:document.getElementById('mCouleur').value.trim(),
+    ep:parseFloat(ep), unite:document.getElementById('mUnite').value,
+    h:document.getElementById('mH').value||'', l:document.getElementById('mL').value||'',
+    ud:'mm', emplacement:document.getElementById('mEmpl').value.trim(),
+    qty:parseInt(document.getElementById('mQty').value)||0,
     seuil:parseInt(document.getElementById('mSeuil').value)||2,
     lastPrint:Date.now(),
   };
@@ -1318,6 +1386,7 @@ function renderStock(){
         <div class="plate-mat" style="color:${col};">${p.famille}</div>
         <div class="plate-sub">${p.ep||0} ${p.unite||'mm'}${p.couleur?' · '+p.couleur:''}</div>
         ${dim?`<div class="plate-dim">${dim}</div>`:''}
+        ${p.emplacement?`<div class="plate-dim" style="color:var(--accent);">📍 ${p.emplacement}</div>`:''}
       </div>
       <div class="qty-inline">
         <button class="qi-btn" onclick="adj('${p.id}',-1)">−</button>
