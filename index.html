@@ -322,8 +322,8 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       </div>
       <div class="card-body">
         <div class="row2">
-          <div class="field"><div class="field-label">Hauteur</div><input type="number" id="dimH" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
           <div class="field"><div class="field-label">Longueur</div><input type="number" id="dimL" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
+          <div class="field"><div class="field-label">Hauteur</div><input type="number" id="dimH" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
         </div>
         <div class="field" style="width:130px;">
           <div class="field-label">Unité dim.</div>
@@ -484,8 +484,8 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         </div>
       </div>
       <div class="row2">
-        <div class="field"><div class="field-label">Hauteur</div><input type="number" id="mH" placeholder="0" min="0" inputmode="decimal"></div>
         <div class="field"><div class="field-label">Longueur</div><input type="number" id="mL" placeholder="0" min="0" inputmode="decimal"></div>
+        <div class="field"><div class="field-label">Hauteur</div><input type="number" id="mH" placeholder="0" min="0" inputmode="decimal"></div>
       </div>
       <div class="row2">
         <div class="field"><div class="field-label">Qté en stock</div><input type="number" id="mQty" value="1" min="0" inputmode="numeric"></div>
@@ -841,28 +841,19 @@ function drawLabel(canvas) {
     ctx.fillText(`(${f.couleur.toUpperCase()})`,MX,y+32); y+=46;
   }
 
-  // DIMENSIONS
+  // DIMENSIONS — Longueur en premier
   let dim='';
-  if(f.h)   dim+=`H:${f.h}`;
-  if(f.lon) dim+=(dim?' x ':'')+`L:${f.lon}`;
+  if(f.lon) dim+=`L:${f.lon}`;
+  if(f.h)   dim+=(dim?' x ':'')+`H:${f.h}`;
   if(dim)   dim+=` ${f.ud}`;
   if(dim){
-    ctx.font='400 36px Arial,sans-serif'; ctx.fillStyle='#222';
+    ctx.font='400 36px Arial,sans-serif'; ctx.fillStyle='#000';
     ctx.fillText(dim,MX,y+32); y+=46;
   }
 
-  // EMPLACEMENT — encadré en bas avant le footer
-  if(f.empl){
-    const ey=H-90;
-    ctx.fillStyle='#000'; ctx.fillRect(MX,ey,W-MX*2,2);
-    ctx.font='700 26px Arial,sans-serif'; ctx.fillStyle='#444';
-    ctx.fillText('📍 '+f.empl.substring(0,22),MX,ey+30);
-  }
-
-  // REMARQUE
+  // REMARQUE — après les dimensions
   if(f.rem){
-    ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#555';
-    // Découpe en lignes de max 18 caractères
+    ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#444';
     const words=f.rem.split(' ');
     let line='';
     for(const w of words){
@@ -872,6 +863,12 @@ function drawLabel(canvas) {
       } else line=test;
     }
     if(line){ctx.fillText(line,MX,y+24); y+=36;}
+  }
+
+  // EMPLACEMENT — sous les remarques
+  if(f.empl){
+    ctx.font='700 28px Arial,sans-serif'; ctx.fillStyle='#000';
+    ctx.fillText('\u{1F4CD} '+f.empl.substring(0,22),MX,y+24); y+=36;
   }
 
   // JOB
@@ -907,13 +904,12 @@ function canvasToBitmap(canvas) {
   const W=canvas.width, H=canvas.height;
   const img=canvas.getContext('2d').getImageData(0,0,W,H).data;
   const bpr=Math.ceil(W/8), buf=new Uint8Array(bpr*H);
-  // TSPL mode 0 : bit 1 = point noir, bit 0 = blanc
-  // Canvas : fond blanc (#fff = lum 255), texte noir (#000 = lum 0)
-  // → on met bit=1 uniquement si pixel sombre (lum < 128)
+  // CT221B TSPL mode 1 : bit 1 = BLANC, bit 0 = NOIR
+  // → on met bit=1 si pixel clair (fond blanc), bit=0 si sombre (texte noir)
   for(let r=0;r<H;r++) for(let c=0;c<W;c++){
     const i=(r*W+c)*4;
     const lum=.299*img[i]+.587*img[i+1]+.114*img[i+2];
-    if(lum < 128)
+    if(lum >= 128) // pixel blanc → bit 1
       buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
   }
   return buf;
@@ -921,13 +917,16 @@ function canvasToBitmap(canvas) {
 
 function buildTSPL() {
   const cv=document.createElement('canvas');
+  cv.width=400; cv.height=640;
+  // Forcer fond blanc sur canvas hors-DOM
+  const ctx2=cv.getContext('2d');
+  ctx2.fillStyle='#ffffff';
+  ctx2.fillRect(0,0,400,640);
   drawLabelForPrint(cv);
   const W=cv.width, H=cv.height, bpr=Math.ceil(W/8), bm=canvasToBitmap(cv);
   const enc=new TextEncoder();
-  // CT221B portrait : 50mm large × 80mm long, 203dpi → 400×640 dots
-  // SIZE : largeur du rouleau × longueur étiquette
-  // BITMAP x,y,widthBytes,heightDots,mode,data
-  // mode 0 : bit1=noir, bit0=blanc
+  // CT221B portrait 50×80mm à 203dpi
+  // BITMAP mode 1 : bit1=blanc, bit0=noir (spécifique CT221B)
   const hdr=enc.encode(
     `SIZE 50 mm,80 mm\r\n` +
     `GAP 2 mm,0 mm\r\n` +
@@ -937,7 +936,7 @@ function buildTSPL() {
     `SPEED 4\r\n` +
     `DENSITY 8\r\n` +
     `CLS\r\n` +
-    `BITMAP 0,0,${bpr},${H},0,`
+    `BITMAP 0,0,${bpr},${H},1,`
   );
   const ftr=enc.encode(`\r\nPRINT ${copies},1\r\n`);
   const out=new Uint8Array(hdr.length+bm.length+ftr.length);
