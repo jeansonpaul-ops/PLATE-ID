@@ -225,6 +225,8 @@ input::placeholder{color:#c0c5d8;}
 #proxyTestResult{font-size:12px;color:var(--muted);}
 .conn-close{background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);border-radius:12px;padding:13px;font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer;}
 
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.12);outline:none;}
+
 /* TOAST */
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--text);color:#fff;font-weight:600;font-size:13px;padding:10px 20px;border-radius:20px;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;z-index:500;pointer-events:none;opacity:0;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
@@ -326,6 +328,22 @@ input::placeholder{color:#c0c5d8;}
           <select id="uniteD" onchange="onField()">
             <option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option>
           </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMARQUES -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background:#f5f3ff;">💬</div>
+        <span class="card-title">Remarques</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-label">Note libre (visible sur l'étiquette)</div>
+          <textarea id="remarque" placeholder="Ex: Côté texturé vers l'extérieur, réservé chantier A…"
+            autocomplete="off" oninput="onField()"
+            style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:12px 14px;font-family:var(--sans);font-size:14px;font-weight:500;border-radius:var(--r-sm);outline:none;width:100%;resize:none;height:80px;transition:border-color .2s;"></textarea>
         </div>
       </div>
     </div>
@@ -648,15 +666,15 @@ const MAT_ICONS = {
 
 // ─── FAMILLES / COULEURS ───────────────────────────────
 const PRESETS = [
-  {label:'Dibond',   value:'DIBOND',             color:'#2563eb'},
-  {label:'PVC',      value:'PVC',                color:'#16a34a'},
-  {label:'MDF',      value:'MDF',                color:'#92400e'},
-  {label:'Plexi',    value:'PLEXIGLASS',         color:'#0891b2'},
-  {label:'Beelite',  value:'BEELITE',            color:'#7c3aed'},
-  {label:'Polypro',  value:'POLYPRO ALVÉOLAIRE', color:'#ea580c'},
-  {label:'Carton',   value:'CARTON E-GOLF',      color:'#65a30d'},
-  {label:'Palboard', value:'PALBOARD',           color:'#db2777'},
-  {label:'Papier',   value:'PAPIER',             color:'#6b7280'},
+  {label:'Dibond',   value:'DIBOND',             color:'#2563eb', defaultCouleur:'Blanc'},
+  {label:'PVC',      value:'PVC',                color:'#16a34a', defaultCouleur:'Blanc'},
+  {label:'MDF',      value:'MDF',                color:'#92400e', defaultCouleur:'Brut'},
+  {label:'Plexi',    value:'PLEXIGLASS',         color:'#0891b2', defaultCouleur:'Transparent'},
+  {label:'Beelite',  value:'BEELITE',            color:'#7c3aed', defaultCouleur:'Blanc'},
+  {label:'Polypro',  value:'POLYPRO ALVÉOLAIRE', color:'#ea580c', defaultCouleur:'Blanc'},
+  {label:'Carton',   value:'CARTON E-GOLF',      color:'#65a30d', defaultCouleur:'Brun'},
+  {label:'Palboard', value:'PALBOARD',           color:'#db2777', defaultCouleur:'Blanc'},
+  {label:'Papier',   value:'PAPIER',             color:'#6b7280', defaultCouleur:'Blanc'},
 ];
 const PALETTE = ['#e11d48','#ea580c','#d97706','#16a34a','#0891b2','#2563eb','#7c3aed','#db2777','#0f766e','#65a30d','#92400e','#6b7280'];
 const PRESET_MAP = {};
@@ -701,6 +719,11 @@ window.setPreset = function(i) {
     b.style.color       = j === i ? '#fff'  : '';
   });
   document.getElementById('matiere').value = p.value;
+  // Pré-remplir la couleur par défaut si le champ est vide
+  const couleurField = document.getElementById('couleur');
+  if (!couleurField.value && p.defaultCouleur) {
+    couleurField.value = p.defaultCouleur;
+  }
   onField();
 };
 
@@ -714,6 +737,7 @@ function getFields() {
     h      : document.getElementById('dimH').value,
     lon    : document.getElementById('dimL').value,
     ud     : document.getElementById('uniteD').value,
+    rem    : (document.getElementById('remarque') ? document.getElementById('remarque').value : '').trim(),
     jn     : jobEnabled ? (document.getElementById('jobName').value || '').toUpperCase() : '',
     jnum   : jobEnabled ? (document.getElementById('jobNum').value  || '').toUpperCase() : '',
   };
@@ -766,6 +790,21 @@ function drawLabel(canvas) {
     ctx.fillText(dim,MX,y+32); y+=46;
   }
 
+  // REMARQUE
+  if(f.rem){
+    ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#555';
+    // Découpe en lignes de max 18 caractères
+    const words=f.rem.split(' ');
+    let line='';
+    for(const w of words){
+      const test=line?line+' '+w:w;
+      if(ctx.measureText(test).width>W-MX*2&&line){
+        ctx.fillText(line,MX,y+24); y+=32; line=w;
+      } else line=test;
+    }
+    if(line){ctx.fillText(line,MX,y+24); y+=36;}
+  }
+
   // JOB
   if(hasJob){
     const jy0=H-(f.jn&&f.jnum?100:60);
@@ -802,10 +841,13 @@ function canvasToBitmap(canvas) {
   for(let r=0;r<H;r++) for(let c=0;c<W;c++){
     const i=(r*W+c)*4;
     const lum=.299*img[i]+.587*img[i+1]+.114*img[i+2];
-    // mode 0 TSPL : bit 1 = NOIR, bit 0 = blanc — texte noir sur fond blanc
-    if(lum < 128)
+    // bit 1 = BLANC (fond), bit 0 = NOIR (texte) — inversé par rapport au mode standard
+    // XOR 0xFF appliqué après pour inverser tout le buffer
+    if(lum >= 128)
       buf[r*bpr+Math.floor(c/8)]|=(0x80>>(c%8));
   }
+  // Inversion globale du bitmap pour corriger le négatif CT221B
+  for(let i=0;i<buf.length;i++) buf[i]^=0xFF;
   return buf;
 }
 
