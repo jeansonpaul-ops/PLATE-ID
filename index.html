@@ -140,8 +140,24 @@ input::placeholder{color:#c0c5d8;}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
 .btn-add{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:0 18px;height:42px;font-family:var(--sans);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(232,146,10,.3);}
 .btn-add:active{opacity:.85;}
-.btn-export{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:0 14px;height:42px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.btn-export{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:0 12px;height:42px;font-family:var(--sans);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .btn-export:active{opacity:.8;}
+
+/* FILTRE TAILLE */
+.size-filter-row{display:flex;flex-direction:column;gap:6px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;}
+.size-filter-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.size-filter-fields{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.size-input-wrap{display:flex;align-items:center;gap:5px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:0 10px;height:38px;flex:1;min-width:90px;transition:border-color .2s;}
+.size-input-wrap:focus-within{border-color:var(--accent);}
+.size-dim-label{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;font-weight:500;}
+.size-input{background:transparent;border:none;outline:none;font-family:var(--mono);font-size:15px;font-weight:500;color:var(--text);width:60px;padding:0;}
+.size-input::placeholder{color:#c0c5d8;}
+.size-unit{background:var(--surface);border:1.5px solid var(--border);color:var(--muted);padding:0 8px;height:38px;font-family:var(--mono);font-size:12px;border-radius:8px;outline:none;-webkit-appearance:none;}
+.size-clear{background:var(--red-bg);border:1.5px solid #fca5a5;color:var(--red);border-radius:8px;width:36px;height:36px;font-size:14px;cursor:pointer;flex-shrink:0;font-family:var(--sans);font-weight:700;}
+.size-hint{font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:500;display:none;}
+.size-hint.show{display:block;}
+/* Highlight plaque correspondante */
+.plate-card.size-match{border-left-width:5px !important;}
 
 /* Sync status */
 .sync-bar{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted);padding:2px 0;}
@@ -443,19 +459,48 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 <!-- ═══ VUE STOCK ═══ -->
 <div class="view" id="view-stock">
   <div class="stock-toolbar">
+
+    <!-- Ligne 1 : recherche + boutons -->
     <div class="search-row">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="stockSearch" placeholder="Rechercher matière, couleur…" autocomplete="off" oninput="renderStock()">
+        <input type="text" id="stockSearch" placeholder="Matière, couleur, emplacement…" autocomplete="off" oninput="renderStock()">
       </div>
       <button class="btn-add" onclick="openAddModal()">＋ Ajouter</button>
-      <button class="btn-export" onclick="exportStock()" title="Exporter le stock">⬇ Export</button>
+      <button class="btn-export" onclick="exportStock()" title="Exporter le stock">⬇</button>
     </div>
+
+    <!-- Ligne 2 : filtre taille -->
+    <div class="size-filter-row">
+      <div class="size-filter-label">📐 Taille min :</div>
+      <div class="size-filter-fields">
+        <div class="size-input-wrap">
+          <span class="size-dim-label">L ≥</span>
+          <input type="number" id="filterL" placeholder="—" min="0" inputmode="decimal" oninput="renderStock()" class="size-input">
+        </div>
+        <div class="size-input-wrap">
+          <span class="size-dim-label">H ≥</span>
+          <input type="number" id="filterH" placeholder="—" min="0" inputmode="decimal" oninput="renderStock()" class="size-input">
+        </div>
+        <div class="size-unit-wrap">
+          <select id="filterUnit" onchange="renderStock()" class="size-unit">
+            <option value="mm">mm</option>
+            <option value="cm">cm</option>
+          </select>
+        </div>
+        <button class="size-clear" onclick="clearSizeFilter()" id="sizeClearBtn" style="display:none;">✕</button>
+      </div>
+      <div class="size-hint" id="sizeHint"></div>
+    </div>
+
+    <!-- Ligne 3 : sync + chips famille -->
     <div class="sync-bar">
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncLabel">Connexion Firebase…</span>
     </div>
     <div class="fam-chips" id="familyChips"></div>
+
+    <!-- Ligne 4 : filtres état + tri + stats -->
     <div class="filter-row">
       <button class="f-chip active" id="fc-all"   onclick="setStateFilter('all')">Tout</button>
       <button class="f-chip state-low"   id="fc-low"   onclick="setStateFilter('low')">🟡 Bas</button>
@@ -466,6 +511,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       </div>
       <span class="stock-stat" id="stockStats"></span>
     </div>
+
   </div>
   <div class="plates-list" id="platesScroll">
     <div class="empty-state"><div class="empty-ico">⏳</div><div class="empty-txt">Chargement du stock…</div></div>
@@ -1390,9 +1436,28 @@ function renderFamilyChips(){
 }
 window.setFamilyFilter=function(f){currentFamily=f;renderStock();};
 
+window.clearSizeFilter = function() {
+  document.getElementById('filterL').value='';
+  document.getElementById('filterH').value='';
+  document.getElementById('sizeClearBtn').style.display='none';
+  document.getElementById('sizeHint').classList.remove('show');
+  renderStock();
+};
+
+function toMm(val, unit){ return unit==='cm'?val*10:val; }
+
 function renderStock(){
   renderFamilyChips();
-  const search=(document.getElementById('stockSearch').value||'').toLowerCase();
+  const search   = (document.getElementById('stockSearch').value||'').toLowerCase();
+  const fL       = parseFloat(document.getElementById('filterL').value)||0;
+  const fH       = parseFloat(document.getElementById('filterH').value)||0;
+  const fUnit    = document.getElementById('filterUnit').value;
+  const hasSizeF = fL>0 || fH>0;
+  const reqL     = toMm(fL, fUnit);
+  const reqH     = toMm(fH, fUnit);
+
+  document.getElementById('sizeClearBtn').style.display = hasSizeF ? '' : 'none';
+
   let plates=[...stock];
   if(currentFamily) plates=plates.filter(p=>p.famille===currentFamily);
   if(currentStateFilter==='low')   plates=plates.filter(p=>(p.qty||0)>0&&(p.qty||0)<=(p.seuil||2));
@@ -1400,12 +1465,34 @@ function renderStock(){
   if(search) plates=plates.filter(p=>
     p.famille.toLowerCase().includes(search)||
     (p.couleur||'').toLowerCase().includes(search)||
-    String(p.ep||'').includes(search)||
-    String(p.h||'').includes(search)||
-    String(p.l||'').includes(search)
+    (p.emplacement||'').toLowerCase().includes(search)||
+    String(p.ep||'').includes(search)
   );
+
+  // ── FILTRE TAILLE — retournement pris en compte ──────
+  // La plaque convient si elle couvre le besoin dans un sens ou l'autre
+  if(hasSizeF){
+    plates=plates.filter(p=>{
+      const pLmm=toMm(parseFloat(p.l)||0, p.ud||'mm');
+      const pHmm=toMm(parseFloat(p.h)||0, p.ud||'mm');
+      if(!pLmm&&!pHmm) return false;
+      const normal  = pLmm>=reqL && pHmm>=reqH;
+      const rotated = pLmm>=reqH && pHmm>=reqL;
+      return normal||rotated;
+    });
+  }
+
   if(currentSort==='mat') plates.sort((a,b)=>a.famille.localeCompare(b.famille)||a.ep-b.ep);
   else plates.sort((a,b)=>(b.lastPrint||0)-(a.lastPrint||0));
+
+  const hint=document.getElementById('sizeHint');
+  if(hasSizeF){
+    hint.classList.add('show');
+    hint.textContent = plates.length>0
+      ? `✓ ${plates.length} plaque(s) utilisable(s) — retournement inclus`
+      : '✗ Aucune plaque de cette taille disponible';
+    hint.style.color = plates.length>0?'var(--green)':'var(--red)';
+  } else { hint.classList.remove('show'); }
 
   const tot=stock.reduce((s,p)=>s+(p.qty||0),0);
   document.getElementById('stockStats').textContent=`${stock.length} réf · ${tot} pcs`;
@@ -1413,26 +1500,38 @@ function renderStock(){
   const scroll=document.getElementById('platesScroll');
   if(!plates.length){
     scroll.innerHTML=`<div class="empty-state">
-      <div class="empty-ico">${search||currentFamily||currentStateFilter!=='all'?'🔍':'📦'}</div>
-      <div class="empty-txt">${search||currentFamily?'Aucun résultat.':'Aucune plaque.<br>Imprimez ou ajoutez manuellement.'}</div>
+      <div class="empty-ico">${search||currentFamily||currentStateFilter!=='all'||hasSizeF?'🔍':'📦'}</div>
+      <div class="empty-txt">${search||currentFamily||hasSizeF?'Aucune plaque ne correspond.':'Aucune plaque.<br>Imprimez ou ajoutez manuellement.'}</div>
     </div>`;
     return;
   }
+
   scroll.innerHTML=plates.map(p=>{
     const qty=p.qty||0,empty=qty===0,low=qty>0&&qty<=(p.seuil||2);
     const qc=empty?'empty':low?'low':'ok';
     const col=getFamilyColor(p.famille);
     let dim='';
-    if(p.h) dim+=`H:${p.h}`;
-    if(p.l) dim+=(dim?' × ':'')+`L:${p.l}`;
+    if(p.l) dim+=`L:${p.l}`;
+    if(p.h) dim+=(dim?' × ':'')+`H:${p.h}`;
     if(dim) dim+=` ${p.ud||'mm'}`;
+
+    // Badge retournement
+    let rotNote='';
+    if(hasSizeF && p.l && p.h){
+      const pLmm=toMm(parseFloat(p.l),p.ud||'mm');
+      const pHmm=toMm(parseFloat(p.h),p.ud||'mm');
+      const normal  = pLmm>=reqL && pHmm>=reqH;
+      const rotated = pLmm>=reqH && pHmm>=reqL;
+      if(rotated&&!normal) rotNote=` <span style="background:#eff6ff;color:#2563eb;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;">↻ retournée</span>`;
+    }
+
     return `<div class="plate-card">
       <div class="plate-stripe" style="background:${col};"></div>
       <div class="plate-badge" style="background:${col}18;color:${col};">${p.famille.substring(0,2).toUpperCase()}</div>
       <div class="plate-info">
         <div class="plate-mat" style="color:${col};">${p.famille}</div>
         <div class="plate-sub">${p.ep||0} ${p.unite||'mm'}${p.couleur?' · '+p.couleur:''}</div>
-        ${dim?`<div class="plate-dim">${dim}</div>`:''}
+        ${dim?`<div class="plate-dim">${dim}${rotNote}</div>`:''}
         ${p.emplacement?`<div class="plate-dim" style="color:var(--accent);">📍 ${p.emplacement}</div>`:''}
       </div>
       <div class="qty-inline">
