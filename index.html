@@ -1258,6 +1258,49 @@ async function _gattConnect(server) {
 }
 
 // ─── FIN DE CONNEXION (commun à tous les chemins) ──────
+async function _finalizeBLEConnect() {
+  bleDevice.addEventListener('gattserverdisconnected', async function() {
+    bleConnected=false; bleChar=null;
+    setStatus('disconnected');
+    showToast('⚠ Déconnectée — reconnexion…');
+    await new Promise(r=>setTimeout(r,1500));
+    try {
+      const server = await bleDevice.gatt.connect();
+      await _gattConnect(server);
+      if(bleChar){
+        bleConnected=true;
+        setStatus('ok_ble', bleDevice.name||'CT221B');
+        showToast('✅ Reconnectée !');
+        if(typeof hidReconnectBanner==='function') hidReconnectBanner();
+      }
+    } catch(e) {
+      if(typeof showReconnectBanner==='function') showReconnectBanner();
+    }
+  });
+
+  setStatus('connecting');
+  bleLog('Connexion GATT…');
+  const server = await bleDevice.gatt.connect();
+  bleLog('GATT connecté','ok');
+  await _gattConnect(server);
+
+  if(!bleChar){
+    bleLog('Aucune caractéristique trouvée','err');
+    showToast('❌ Aucun service BLE compatible');
+    setStatus('error');
+    return;
+  }
+
+  bleConnected=true;
+  const devName = bleDevice.name||'CT221B';
+  localStorage.setItem(LAST_BLE_KEY, devName);
+  if(typeof updateQuickReconnectBtn==='function') updateQuickReconnectBtn();
+  setStatus('ok_ble', devName);
+  showToast('✅ '+devName+' connectée !');
+  bleLog('Prêt à imprimer !','ok');
+  if(typeof hidReconnectBanner==='function') hidReconnectBanner();
+  closeConnSheet();
+}
 
 // ─── SCAN COMPLET (premier appairage) ─────────────────
 async function connectBLE() {
