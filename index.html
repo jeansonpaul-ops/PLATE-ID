@@ -295,7 +295,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       <div class="logo-sub">CT221B · LuxVisual</div>
     </div>
   </div>
-  <button class="conn-btn" id="printerPill" onclick="openConnSheet()">
+  <button class="conn-btn" id="printerPill">
     <div class="conn-dot" id="statusDot"></div>
     <span id="statusText">Connecter</span>
   </button>
@@ -333,39 +333,39 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
         <!-- BOUTONS MATIÈRE EN DUR — visibles immédiatement -->
         <div class="mat-grid">
-          <button class="mat-btn" id="mb-0" onclick="selectMat(0)"
+          <button class="mat-btn" id="mb-0"
             style="background:#2563eb;border-color:#2563eb;">
             <span class="mat-btn-name" style="color:#fff;">Dibond</span>
           </button>
-          <button class="mat-btn" id="mb-1" onclick="selectMat(1)"
+          <button class="mat-btn" id="mb-1"
             style="background:#16a34a;border-color:#16a34a;">
             <span class="mat-btn-name" style="color:#fff;">PVC</span>
           </button>
-          <button class="mat-btn" id="mb-2" onclick="selectMat(2)"
+          <button class="mat-btn" id="mb-2"
             style="background:#92400e;border-color:#92400e;">
             <span class="mat-btn-name" style="color:#fff;">MDF</span>
           </button>
-          <button class="mat-btn" id="mb-3" onclick="selectMat(3)"
+          <button class="mat-btn" id="mb-3"
             style="background:#0891b2;border-color:#0891b2;">
             <span class="mat-btn-name" style="color:#fff;">Plexiglass</span>
           </button>
-          <button class="mat-btn" id="mb-4" onclick="selectMat(4)"
+          <button class="mat-btn" id="mb-4"
             style="background:#7c3aed;border-color:#7c3aed;">
             <span class="mat-btn-name" style="color:#fff;">Beelite</span>
           </button>
-          <button class="mat-btn" id="mb-5" onclick="selectMat(5)"
+          <button class="mat-btn" id="mb-5"
             style="background:#ea580c;border-color:#ea580c;">
             <span class="mat-btn-name" style="color:#fff;">Polypro</span>
           </button>
-          <button class="mat-btn" id="mb-6" onclick="selectMat(6)"
+          <button class="mat-btn" id="mb-6"
             style="background:#65a30d;border-color:#65a30d;">
             <span class="mat-btn-name" style="color:#fff;">Carton</span>
           </button>
-          <button class="mat-btn" id="mb-7" onclick="selectMat(7)"
+          <button class="mat-btn" id="mb-7"
             style="background:#db2777;border-color:#db2777;">
             <span class="mat-btn-name" style="color:#fff;">Palboard</span>
           </button>
-          <button class="mat-btn" id="mb-8" onclick="selectMat(8)"
+          <button class="mat-btn" id="mb-8"
             style="background:#6b7280;border-color:#6b7280;">
             <span class="mat-btn-name" style="color:#fff;">Papier</span>
           </button>
@@ -373,20 +373,20 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
         <div class="field">
           <div class="field-label">Nom personnalisé</div>
-          <input type="text" id="matiere" placeholder="DIBOND, PVC, MDF…" autocomplete="off" autocorrect="off" autocapitalize="characters" oninput="onField()">
+          <input type="text" id="matiere" placeholder="DIBOND, PVC, MDF…" autocomplete="off" autocorrect="off" autocapitalize="characters">
         </div>
         <div class="field">
           <div class="field-label">Couleur / Finition</div>
-          <input type="text" id="couleur" placeholder="Blanc, RAL 9016, Brossé…" autocomplete="off" oninput="onField()">
+          <input type="text" id="couleur" placeholder="Blanc, RAL 9016, Brossé…" autocomplete="off">
         </div>
         <div class="row3">
           <div class="field">
             <div class="field-label">Épaisseur</div>
-            <input type="number" id="epaisseur" placeholder="0" min="0" step="0.5" inputmode="decimal" oninput="onField()">
+            <input type="number" id="epaisseur" placeholder="0" min="0" step="0.5" inputmode="decimal">
           </div>
           <div class="field">
             <div class="field-label">Unité</div>
-            <select id="unite" onchange="onField()">
+            <select id="unite">
               <option value="mm">mm</option><option value="cm">cm</option>
               <option value="µm">µm</option><option value="in">in</option>
             </select>
@@ -403,12 +403,12 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       </div>
       <div class="card-body">
         <div class="row2">
-          <div class="field"><div class="field-label">Longueur</div><input type="number" id="dimL" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
-          <div class="field"><div class="field-label">Hauteur</div><input type="number" id="dimH" placeholder="0" min="0" inputmode="decimal" oninput="onField()"></div>
+          <div class="field"><div class="field-label">Longueur</div><input type="number" id="dimL" placeholder="0" min="0" inputmode="decimal"></div>
+          <div class="field"><div class="field-label">Hauteur</div><input type="number" id="dimH" placeholder="0" min="0" inputmode="decimal"></div>
         </div>
         <div class="field" style="width:130px;">
           <div class="field-label">Unité dim.</div>
-          <select id="uniteD" onchange="onField()">
+          <select id="uniteD">
             <option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option>
           </select>
         </div>
@@ -425,7 +425,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         <div class="field">
           <div class="field-label">Note libre (visible sur l'étiquette)</div>
           <textarea id="remarque" placeholder="Ex: Côté texturé vers l'extérieur, réservé chantier A…"
-            autocomplete="off" oninput="onField()"
+            autocomplete="off"
             style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:12px 14px;font-family:var(--sans);font-size:14px;font-weight:500;border-radius:var(--r-sm);outline:none;width:100%;resize:none;height:80px;transition:border-color .2s;"></textarea>
         </div>
       </div>
@@ -440,7 +440,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       <div class="card-body">
         <div class="field">
           <div class="field-label">Zone / Rack / Étagère</div>
-          <input type="text" id="emplacement" placeholder="Ex: Rack A3, Étagère 2, Zone Impression…" autocomplete="off" autocapitalize="characters" oninput="onField()">
+          <input type="text" id="emplacement" placeholder="Ex: Rack A3, Étagère 2, Zone Impression…" autocomplete="off" autocapitalize="characters">
         </div>
       </div>
     </div>
@@ -452,13 +452,13 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         <span class="card-title">Infos de job</span>
       </div>
       <div class="card-body">
-        <div class="toggle-row" onclick="toggleJob()">
+        <div class="toggle-row">
           <div class="toggle" id="jobToggle"></div>
           <span class="toggle-label">Inclure un numéro de job</span>
         </div>
         <div class="job-fields" id="jobFields">
-          <div class="field"><div class="field-label">Nom du job</div><input type="text" id="jobName" placeholder="FACADE OUEST" autocapitalize="characters" oninput="onField()"></div>
-          <div class="field"><div class="field-label">N° de job</div><input type="text" id="jobNum" placeholder="JOB-2024-001" oninput="onField()"></div>
+          <div class="field"><div class="field-label">Nom du job</div><input type="text" id="jobName" placeholder="FACADE OUEST" autocapitalize="characters"></div>
+          <div class="field"><div class="field-label">N° de job</div><input type="text" id="jobNum" placeholder="JOB-2024-001"></div>
         </div>
       </div>
     </div>
@@ -473,9 +473,9 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         <div class="copies-widget">
           <span class="copies-label">Nombre d'étiquettes</span>
           <div class="qty-ctrl">
-            <button class="qty-btn" onclick="changeCopies(-1)">−</button>
+            <button class="qty-btn">−</button>
             <div class="qty-val" id="copiesVal">1</div>
-            <button class="qty-btn" onclick="changeCopies(1)">+</button>
+            <button class="qty-btn">+</button>
           </div>
         </div>
       </div>
@@ -501,15 +501,15 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
   <div style="flex:1;font-family:var(--sans);font-size:13px;font-weight:600;color:#16a34a;">
     Reconnecter <span id="reconnectBannerName" style="font-weight:900;"></span> ?
   </div>
-  <button onclick="quickReconnect();hidReconnectBanner();" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;">
+  <button style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;">
     Connecter
   </button>
-  <button onclick="hidReconnectBanner();" style="background:transparent;border:none;color:#16a34a;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
+  <button style="background:transparent;border:none;color:#16a34a;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
 </div>
 
 <!-- BOUTON IMPRIMER -->
 <div class="print-bar" id="printBar">
-  <button class="btn-print" id="btnPrint" onclick="doPrint()">🖨 &nbsp;IMPRIMER</button>
+  <button class="btn-print" id="btnPrint">🖨 &nbsp;IMPRIMER</button>
 </div>
 
 <!-- ═══ VUE STOCK ═══ -->
@@ -520,10 +520,10 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     <div class="search-row">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="stockSearch" placeholder="Matière, couleur, emplacement…" autocomplete="off" oninput="renderStock()">
+        <input type="text" id="stockSearch" placeholder="Matière, couleur, emplacement…" autocomplete="off">
       </div>
-      <button class="btn-add" onclick="openAddModal()">＋ Ajouter</button>
-      <button class="btn-export" onclick="exportStock()" title="Exporter le stock">⬇</button>
+      <button class="btn-add">＋ Ajouter</button>
+      <button class="btn-export" title="Exporter le stock">⬇</button>
     </div>
 
     <!-- Ligne 2 : filtre taille -->
@@ -532,19 +532,19 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       <div class="size-filter-fields">
         <div class="size-input-wrap">
           <span class="size-dim-label">L ≥</span>
-          <input type="number" id="filterL" placeholder="—" min="0" inputmode="decimal" oninput="renderStock()" class="size-input">
+          <input type="number" id="filterL" placeholder="—" min="0" inputmode="decimal" class="size-input">
         </div>
         <div class="size-input-wrap">
           <span class="size-dim-label">H ≥</span>
-          <input type="number" id="filterH" placeholder="—" min="0" inputmode="decimal" oninput="renderStock()" class="size-input">
+          <input type="number" id="filterH" placeholder="—" min="0" inputmode="decimal" class="size-input">
         </div>
         <div class="size-unit-wrap">
-          <select id="filterUnit" onchange="renderStock()" class="size-unit">
+          <select id="filterUnit" class="size-unit">
             <option value="mm">mm</option>
             <option value="cm">cm</option>
           </select>
         </div>
-        <button class="size-clear" onclick="clearSizeFilter()" id="sizeClearBtn" style="display:none;">✕</button>
+        <button class="size-clear" id="sizeClearBtn" style="display:none;">✕</button>
       </div>
       <div class="size-hint" id="sizeHint"></div>
     </div>
@@ -558,12 +558,12 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
     <!-- Ligne 4 : filtres état + tri + stats -->
     <div class="filter-row">
-      <button class="f-chip active" id="fc-all"   onclick="setStateFilter('all')">Tout</button>
-      <button class="f-chip state-low"   id="fc-low"   onclick="setStateFilter('low')">🟡 Bas</button>
-      <button class="f-chip state-empty" id="fc-empty" onclick="setStateFilter('empty')">🔴 Épuisé</button>
+      <button class="f-chip active" id="fc-all">Tout</button>
+      <button class="f-chip state-low"   id="fc-low">🟡 Bas</button>
+      <button class="f-chip state-empty" id="fc-empty">🔴 Épuisé</button>
       <div style="margin-left:auto;display:flex;gap:5px;">
-        <button class="f-chip" id="sort-mat"  onclick="setSort('mat')">A–Z</button>
-        <button class="f-chip active" id="sort-date" onclick="setSort('date')">Récent</button>
+        <button class="f-chip" id="sort-mat">A–Z</button>
+        <button class="f-chip active" id="sort-date">Récent</button>
       </div>
       <span class="stock-stat" id="stockStats"></span>
     </div>
@@ -575,7 +575,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 </div>
 
 <!-- MODAL PLAQUE -->
-<div class="modal-backdrop" id="modalBackdrop" onclick="closeAddModal(event)">
+<div class="modal-backdrop" id="modalBackdrop">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle">Ajouter une plaque</div>
@@ -583,7 +583,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       <input type="hidden" id="mId">
       <div class="field">
         <div class="field-label">Famille / Matière</div>
-        <select id="mFam" onchange="onMFamChange()">
+        <select id="mFam">
           <option value="">-- Sélectionner --</option>
           <option>Dibond</option><option>PVC</option><option>MDF</option>
           <option>Plexiglass</option><option>Beelite</option>
@@ -620,14 +620,14 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       </div>
     </div>
     <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeAddModal()">Annuler</button>
-      <button class="modal-ok" onclick="savePlate()">Enregistrer</button>
+      <button class="modal-cancel">Annuler</button>
+      <button class="modal-ok">Enregistrer</button>
     </div>
   </div>
 </div>
 
 <!-- CONN SHEET -->
-<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeConnSheet()"></div>
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
 <div class="conn-sheet" id="connSheet">
   <div class="sheet-handle"></div>
   <div class="conn-title">Imprimante CT221B</div>
@@ -635,7 +635,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
   <!-- Bouton reconnexion rapide — visible uniquement si imprimante déjà connue -->
   <div id="quickReconnectWrap" style="display:none;">
-    <button class="conn-option" style="border-color:#86efac;background:#f0fdf4;" onclick="quickReconnect()">
+    <button class="conn-option" style="border-color:#86efac;background:#f0fdf4;">
       <span class="conn-option-icon">⚡</span>
       <div class="conn-option-text">
         <strong id="quickReconnectLabel" style="color:#16a34a;">Reconnecter CT221B</strong>
@@ -644,7 +644,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     </button>
   </div>
 
-  <div class="conn-option" onclick="connectBLE()">
+  <div class="conn-option">
     <span class="conn-option-icon">📶</span>
     <div class="conn-option-text">
       <strong>Nouveau scan Bluetooth</strong>
@@ -659,12 +659,12 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     <div class="proxy-label">Proxy LAN (node server.js)</div>
     <div class="proxy-row">
       <input class="proxy-input" type="text" id="proxyInput" placeholder="192.168.1.10:3000">
-      <button class="proxy-ok" onclick="saveProxy()">OK</button>
+      <button class="proxy-ok">OK</button>
     </div>
     <div id="proxyTestResult"></div>
   </div>
 
-  <button class="conn-close" onclick="closeConnSheet()">Fermer</button>
+  <button class="conn-close">Fermer</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1482,11 +1482,11 @@ function renderFamilyChips(){
   const wrap=document.getElementById('familyChips');
   const allActive=!currentFamily;
   wrap.innerHTML=
-    `<button class="fam-chip ${allActive?'active':''}" onclick="setFamilyFilter('')" style="${allActive?'background:var(--accent);border-color:var(--accent);color:#fff;':''}">Toutes (${stock.length})</button>`+
+    `<button class="fam-chip ${allActive?'active':''}" data-fam="" style="${allActive?'background:var(--accent);border-color:var(--accent);color:#fff;':''}">Toutes (${stock.length})</button>`+
     fams.map(f=>{
       const col=getFamilyColor(f),active=currentFamily===f;
       const cnt=stock.filter(p=>p.famille===f).length;
-      return `<button class="fam-chip${active?' active':''}" onclick="setFamilyFilter('${f.replace(/'/g,"\\'")}') "
+      return `<button class="fam-chip${active?' active':''}" data-fam="${f.replace(/"/g,'&quot;')}"
         style="${active?`background:${col};border-color:${col};color:#fff;`:`border-color:${col}55;color:${col};`}">${f} (${cnt})</button>`;
     }).join('');
 }
@@ -1581,7 +1581,7 @@ function renderStock(){
       if(rotated&&!normal) rotNote=` <span style="background:#eff6ff;color:#2563eb;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;">↻ retournée</span>`;
     }
 
-    return `<div class="plate-card">
+    return `<div class="plate-card" data-id="${p.id}">
       <div class="plate-stripe" style="background:${col};"></div>
       <div class="plate-badge" style="background:${col}18;color:${col};">${p.famille.substring(0,2).toUpperCase()}</div>
       <div class="plate-info">
@@ -1591,14 +1591,14 @@ function renderStock(){
         ${p.emplacement?`<div class="plate-dim" style="color:var(--accent);">📍 ${p.emplacement}</div>`:''}
       </div>
       <div class="qty-inline">
-        <button class="qi-btn" onclick="adj('${p.id}',-1)">−</button>
+        <button class="qi-btn" data-action="adj" data-d="-1">−</button>
         <div class="qi-val ${qc}">${qty}</div>
-        <button class="qi-btn" onclick="adj('${p.id}',+1)">+</button>
+        <button class="qi-btn" data-action="adj" data-d="1">+</button>
       </div>
       <div class="plate-btns">
-        <button class="pib pib-print" style="background:${col};" onclick="printFromStock('${p.id}')" title="Imprimer">🖨</button>
-        <button class="pib pib-edit" onclick="openAddModal('${p.id}')" title="Modifier">✏️</button>
-        <button class="pib pib-del" onclick="delPlate('${p.id}')" title="Supprimer">✕</button>
+        <button class="pib pib-print" style="background:${col};" data-action="print" title="Imprimer">🖨</button>
+        <button class="pib pib-edit" data-action="edit" title="Modifier">✏️</button>
+        <button class="pib pib-del" data-action="del" title="Supprimer">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -1615,7 +1615,7 @@ function renderHist(){
   if(!hist.length){el.innerHTML='<div style="font-size:13px;color:var(--muted);">Aucune impression récente</div>';return;}
   el.innerHTML=hist.map((h,i)=>{
     const col=PRESET_MAP[h.mat]||getFamilyColor(h.mat);
-    return `<div class="hist-item" onclick="reloadHist(${i})">
+    return `<div class="hist-item" data-idx="${i}">
       <div class="hist-dot" style="background:${col};"></div>
       <div class="hist-text">${h.mat}${h.ep?' — '+h.ep+h.unite:''} · ${h.ts}</div>
       <span class="hist-arrow">↩</span>
@@ -1683,46 +1683,128 @@ let _sy=0;
 document.getElementById('connSheet').addEventListener('touchstart',e=>{_sy=e.touches[0].clientY;},{passive:true});
 document.getElementById('connSheet').addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-_sy>70)closeConnSheet();},{passive:true});
 
-// ─── INIT ──────────────────────────────────────────────
+
+// ─── INIT — tous les handlers via addEventListener ──────
 buildPresets();
 initMatButtons();
 updatePreview();
 renderHist();
 if(proxyUrl) setStatus('ok_proxy', proxyUrl);
 
-// Onglets — addEventListener pour éviter problème module ES async
+// ── Délégation stock cards ──
+document.getElementById('platesScroll').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if(!btn) return;
+  const card = btn.closest('[data-id]');
+  const id = card?.dataset.id;
+  const action = btn.dataset.action;
+  if(action === 'adj' && id) adj(id, parseInt(btn.dataset.d));
+  if(action === 'print' && id) printFromStock(id);
+  if(action === 'edit' && id) openAddModal(id);
+  if(action === 'del' && id) delPlate(id);
+});
+
+// ── Délégation family chips (générés dynamiquement) ──
+document.getElementById('familyChips').addEventListener('click', e => {
+  const btn = e.target.closest('[data-fam]');
+  if(btn) setFamilyFilter(btn.dataset.fam);
+});
 document.getElementById('tab-label').addEventListener('click', () => switchTab('label'));
 document.getElementById('tab-stock').addEventListener('click', () => switchTab('stock'));
 
-// ── Expose toutes les fonctions au scope global (requis pour onclick en module ES) ──
-window.onField          = onField;
-window.toggleJob        = toggleJob;
-window.changeCopies     = changeCopies;
-window.doPrint          = doPrint;
-window.switchTab        = switchTab;
-window.openConnSheet    = openConnSheet;
-window.closeConnSheet   = closeConnSheet;
-window.connectBLE       = connectBLE;
-window.saveProxy        = saveProxy;
-window.adj              = adj;
-window.delPlate         = delPlate;
-window.printFromStock   = printFromStock;
-window.openAddModal     = openAddModal;
-window.closeAddModal    = closeAddModal;
-window.savePlate        = savePlate;
-window.onMFamChange     = onMFamChange;
-window.exportStock      = exportStock;
-window.clearSizeFilter  = clearSizeFilter;
-window.setStateFilter   = setStateFilter;
-window.setSort          = setSort;
-window.setFamilyFilter  = setFamilyFilter;
-window.reloadHist       = reloadHist;
-window.quickReconnect   = quickReconnect;
-window.hidReconnectBanner = hidReconnectBanner;
-window.setPreset        = setPreset;
-window.selectMat        = selectMat;
-window.renderStock      = renderStock;
-window.showToast        = showToast;
+// ── Boutons matière (9 boutons) ──
+for(let i=0;i<9;i++){
+  const btn = document.getElementById('mb-'+i);
+  if(btn) btn.addEventListener('click', () => selectMat(i));
+}
+
+// ── Connexion imprimante ──
+document.getElementById('printerPill').addEventListener('click', openConnSheet);
+const connCloseBtns = document.querySelectorAll('.conn-close,.btn-cancel-conn');
+connCloseBtns.forEach(b => b.addEventListener('click', closeConnSheet));
+document.getElementById('sheetBackdrop').addEventListener('click', closeConnSheet);
+const connOption = document.querySelector('.conn-option');
+if(connOption) connOption.addEventListener('click', connectBLE);
+const quickWrap = document.getElementById('quickReconnectWrap');
+if(quickWrap) quickWrap.querySelector('button')?.addEventListener('click', quickReconnect);
+document.querySelector('.proxy-ok')?.addEventListener('click', saveProxy);
+
+// ── Bannière reconnexion ──
+const bnr = document.getElementById('reconnectBanner');
+if(bnr){
+  bnr.querySelector('[onclick*="quickReconnect"]') // nettoyé — on utilise les boutons par ordre
+  const bnrBtns = bnr.querySelectorAll('button');
+  if(bnrBtns[0]) bnrBtns[0].addEventListener('click', () => { quickReconnect(); hidReconnectBanner(); });
+  if(bnrBtns[1]) bnrBtns[1].addEventListener('click', hidReconnectBanner);
+}
+
+// ── Étiquette — champs ──
+document.getElementById('matiere').addEventListener('input', onField);
+document.getElementById('epaisseur').addEventListener('input', onField);
+document.getElementById('unite').addEventListener('change', onField);
+document.getElementById('couleur').addEventListener('input', onField);
+document.getElementById('dimL').addEventListener('input', onField);
+document.getElementById('dimH').addEventListener('input', onField);
+document.getElementById('uniteD').addEventListener('change', onField);
+document.getElementById('remarque')?.addEventListener('input', onField);
+document.getElementById('emplacement')?.addEventListener('input', onField);
+document.getElementById('jobName')?.addEventListener('input', onField);
+document.getElementById('jobNum')?.addEventListener('input', onField);
+
+// ── Toggle job ──
+document.querySelector('.toggle-row')?.addEventListener('click', toggleJob);
+
+// ── Copies ──
+const qtyBtns = document.querySelectorAll('.qty-btn');
+if(qtyBtns[0]) qtyBtns[0].addEventListener('click', () => changeCopies(-1));
+if(qtyBtns[1]) qtyBtns[1].addEventListener('click', () => changeCopies(1));
+
+// ── Imprimer ──
+document.getElementById('btnPrint').addEventListener('click', doPrint);
+
+// ── Stock toolbar ──
+document.getElementById('stockSearch').addEventListener('input', renderStock);
+document.getElementById('filterL').addEventListener('input', renderStock);
+document.getElementById('filterH').addEventListener('input', renderStock);
+document.getElementById('filterUnit').addEventListener('change', renderStock);
+document.querySelector('.btn-add')?.addEventListener('click', () => openAddModal());
+document.querySelector('.btn-export')?.addEventListener('click', exportStock);
+document.querySelector('.size-clear')?.addEventListener('click', clearSizeFilter);
+document.getElementById('fc-all').addEventListener('click', () => setStateFilter('all'));
+document.getElementById('fc-low').addEventListener('click', () => setStateFilter('low'));
+document.getElementById('fc-empty').addEventListener('click', () => setStateFilter('empty'));
+document.getElementById('sort-mat').addEventListener('click', () => setSort('mat'));
+document.getElementById('sort-date').addEventListener('click', () => setSort('date'));
+
+// ── Modal plaque ──
+document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('modalBackdrop')) closeAddModal();
+});
+document.querySelector('.modal-cancel')?.addEventListener('click', closeAddModal);
+document.querySelector('.modal-ok')?.addEventListener('click', savePlate);
+document.getElementById('mFam').addEventListener('change', onMFamChange);
+
+// ── Historique items — délégation ──
+document.getElementById('histList').addEventListener('click', e => {
+  const item = e.target.closest('.hist-item');
+  if(item) reloadHist(parseInt(item.dataset.idx));
+});
+
+// ── Swipe sheet ──
+let _sy=0;
+const connSheet = document.getElementById('connSheet');
+connSheet.addEventListener('touchstart', e=>{ _sy=e.touches[0].clientY; },{passive:true});
+connSheet.addEventListener('touchend',   e=>{ if(e.changedTouches[0].clientY-_sy>70) closeConnSheet(); },{passive:true});
+
+// ── Reconnexion auto au démarrage ──
+setTimeout(() => {
+  const name = localStorage.getItem(LAST_BLE_KEY);
+  if(name && navigator.bluetooth && !bleConnected && !proxyUrl) showReconnectBanner();
+}, 1200);
+updateQuickReconnectBtn();
+
+console.info('%c📦 Plate ID — Firebase: plate-id-e47c8', 'font-weight:bold;color:#e8920a');
+
 
 // ─── RECONNEXION RAPIDE BLE ────────────────────────────
 function updateQuickReconnectBtn() {
