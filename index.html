@@ -91,6 +91,13 @@ input::placeholder{color:#c0c5d8;}
 .preset-chip.active{color:#fff;border-color:transparent;}
 .preset-chip:active{transform:scale(.96);}
 
+/* ── BOUTONS MATIÈRE ── */
+.mat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.mat-btn{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:10px;cursor:pointer;border:2.5px solid transparent;background:var(--surface2);transition:all .15s;-webkit-tap-highlight-color:transparent;padding:6px 4px;}
+.mat-btn:active{transform:scale(.94);}
+.mat-btn.active{box-shadow:0 3px 14px rgba(0,0,0,.18);}
+.mat-btn-name{font-family:var(--sans);font-weight:900;font-size:14px;text-align:center;line-height:1.2;}
+
 /* TOGGLE */
 .toggle-row{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
 .toggle{width:44px;height:26px;background:var(--border);border-radius:13px;position:relative;transition:background .2s;flex-shrink:0;}
@@ -310,11 +317,41 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     <div class="card">
       <div class="card-header">
         <div class="card-icon" style="background:#fff5e6;">🧱</div>
-        <span class="card-title">Matière</span>
+        <span class="card-title">Matière — sélection rapide</span>
       </div>
       <div class="card-body">
-        <div class="presets-icons" id="presetsIcons"></div>
-        <div class="presets-chips" id="presetsChips"></div>
+
+        <!-- BOUTONS MATIÈRE EN DUR — visibles immédiatement -->
+        <div class="mat-grid">
+          <button class="mat-btn" id="mb-0" style="--mc:#2563eb" onclick="selectMat(0)">
+            <span class="mat-btn-name">Dibond</span>
+          </button>
+          <button class="mat-btn" id="mb-1" style="--mc:#16a34a" onclick="selectMat(1)">
+            <span class="mat-btn-name">PVC</span>
+          </button>
+          <button class="mat-btn" id="mb-2" style="--mc:#92400e" onclick="selectMat(2)">
+            <span class="mat-btn-name">MDF</span>
+          </button>
+          <button class="mat-btn" id="mb-3" style="--mc:#0891b2" onclick="selectMat(3)">
+            <span class="mat-btn-name">Plexiglass</span>
+          </button>
+          <button class="mat-btn" id="mb-4" style="--mc:#7c3aed" onclick="selectMat(4)">
+            <span class="mat-btn-name">Beelite</span>
+          </button>
+          <button class="mat-btn" id="mb-5" style="--mc:#ea580c" onclick="selectMat(5)">
+            <span class="mat-btn-name">Polypro</span>
+          </button>
+          <button class="mat-btn" id="mb-6" style="--mc:#65a30d" onclick="selectMat(6)">
+            <span class="mat-btn-name">Carton</span>
+          </button>
+          <button class="mat-btn" id="mb-7" style="--mc:#db2777" onclick="selectMat(7)">
+            <span class="mat-btn-name">Palboard</span>
+          </button>
+          <button class="mat-btn" id="mb-8" style="--mc:#6b7280" onclick="selectMat(8)">
+            <span class="mat-btn-name">Papier</span>
+          </button>
+        </div>
+
         <div class="field">
           <div class="field-label">Nom personnalisé</div>
           <input type="text" id="matiere" placeholder="DIBOND, PVC, MDF…" autocomplete="off" autocorrect="off" autocapitalize="characters" oninput="onField()">
@@ -640,19 +677,9 @@ let bleChar = null, bleDevice = null, bleConnected = false;
 let proxyUrl = localStorage.getItem('ct_proxy') || '';
 let hist = JSON.parse(localStorage.getItem('ct_hist') || '[]');
 let currentFamily = '', currentStateFilter = 'all', currentSort = 'date';
+const LAST_BLE_KEY = 'ct_last_ble_name';
 
-// ─── FIREBASE REALTIME ─────────────────────────────────
-setSyncStatus('connecting');
-const unsub = onSnapshot(collection(db, COLL), snap => {
-  stock = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  setSyncStatus('live');
-  renderStock();
-  updateBadge();
-}, err => {
-  setSyncStatus('error');
-  bleLog('Firebase erreur: ' + err.message, 'err');
-});
-
+// ─── SYNC STATUS ───────────────────────────────────────
 function setSyncStatus(state) {
   const dot = document.getElementById('syncDot');
   const lbl = document.getElementById('syncLabel');
@@ -660,6 +687,18 @@ function setSyncStatus(state) {
   else if (state === 'error') { dot.classList.remove('live'); dot.style.background='var(--red)'; lbl.textContent = 'Erreur de synchronisation'; }
   else                        { dot.classList.remove('live'); lbl.textContent = 'Connexion Firebase…'; }
 }
+
+// ─── FIREBASE REALTIME ─────────────────────────────────
+setSyncStatus('connecting');
+onSnapshot(collection(db, COLL), snap => {
+  stock = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  setSyncStatus('live');
+  renderStock();
+  updateBadge();
+}, err => {
+  setSyncStatus('error');
+  console.error('Firebase erreur:', err.message);
+});
 
 async function fbSet(id, data) {
   await setDoc(doc(db, COLL, id), { ...data, updatedAt: serverTimestamp() });
@@ -672,7 +711,7 @@ async function fbDelete(id) {
 }
 
 // ─── EXPORT STOCK ──────────────────────────────────────
-window.exportStock = function() {
+function exportStock() {
   if (!stock.length) { showToast('⚠ Stock vide, rien à exporter'); return; }
 
   // Trie par famille puis épaisseur
@@ -830,26 +869,35 @@ function getFamilyColor(name) {
 function buildPresets() {
   const icons = document.getElementById('presetsIcons');
   const chips = document.getElementById('presetsChips');
+
   icons.innerHTML = PRESETS.map((p, i) => {
     const svg = MAT_ICONS[p.value] || MAT_ICONS.PAPIER;
-    return `<button class="preset-icon-btn" onclick="setPreset(${i})" title="${p.label}">
+    return `<button class="preset-icon-btn" data-preset="${i}" title="${p.label}">
       <div class="preset-icon-wrap">${svg}</div>
       <span class="preset-icon-name">${p.label}</span>
     </button>`;
   }).join('');
+
   chips.innerHTML = PRESETS.map((p, i) =>
-    `<button class="preset-chip" onclick="setPreset(${i})">${p.label}</button>`
+    `<button class="preset-chip" data-preset="${i}">${p.label}</button>`
   ).join('');
+
+  // addEventListener — fonctionne en module ES
+  icons.querySelectorAll('[data-preset]').forEach(b =>
+    b.addEventListener('click', () => setPreset(parseInt(b.dataset.preset)))
+  );
+  chips.querySelectorAll('[data-preset]').forEach(b =>
+    b.addEventListener('click', () => setPreset(parseInt(b.dataset.preset)))
+  );
 }
-window.setPreset = function(i) {
+
+function setPreset(i) {
   const p = PRESETS[i];
-  // Icônes
   document.querySelectorAll('.preset-icon-btn').forEach((b, j) => {
     b.classList.toggle('active', j === i);
-    b.querySelector('.preset-icon-wrap').style.background = j === i ? p.color + '22' : '';
+    b.querySelector('.preset-icon-wrap').style.background  = j === i ? p.color + '22' : '';
     b.querySelector('.preset-icon-wrap').style.borderColor = j === i ? p.color : '';
   });
-  // Chips
   document.querySelectorAll('.preset-chip').forEach((b, j) => {
     b.classList.toggle('active', j === i);
     b.style.background  = j === i ? p.color : '';
@@ -857,13 +905,60 @@ window.setPreset = function(i) {
     b.style.color       = j === i ? '#fff'  : '';
   });
   document.getElementById('matiere').value = p.value;
-  // Pré-remplir la couleur par défaut si le champ est vide
   const couleurField = document.getElementById('couleur');
-  if (!couleurField.value && p.defaultCouleur) {
-    couleurField.value = p.defaultCouleur;
-  }
+  if (!couleurField.value && p.defaultCouleur) couleurField.value = p.defaultCouleur;
   onField();
-};
+}
+
+// ─── SÉLECTION MATIÈRE — boutons hardcodés ─────────────
+const MAT_DEFS = [
+  {value:'DIBOND',             couleur:'Blanc',       color:'#2563eb'},
+  {value:'PVC',                couleur:'Blanc',       color:'#16a34a'},
+  {value:'MDF',                couleur:'Brut',        color:'#92400e'},
+  {value:'PLEXIGLASS',         couleur:'Transparent', color:'#0891b2'},
+  {value:'BEELITE',            couleur:'Blanc',       color:'#7c3aed'},
+  {value:'POLYPRO ALVÉOLAIRE', couleur:'Blanc',       color:'#ea580c'},
+  {value:'CARTON E-GOLF',      couleur:'Brun',        color:'#65a30d'},
+  {value:'PALBOARD',           couleur:'Blanc',       color:'#db2777'},
+  {value:'PAPIER',             couleur:'Blanc',       color:'#6b7280'},
+];
+
+function selectMat(i) {
+  const m = MAT_DEFS[i];
+  // Style des boutons
+  for (let j = 0; j < MAT_DEFS.length; j++) {
+    const btn = document.getElementById('mb-' + j);
+    if (!btn) continue;
+    const c = MAT_DEFS[j].color;
+    if (j === i) {
+      btn.classList.add('active');
+      btn.style.background   = c;
+      btn.style.borderColor  = c;
+      btn.querySelector('.mat-btn-name').style.color = '#fff';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background   = '';
+      btn.style.borderColor  = c + '55';
+      btn.querySelector('.mat-btn-name').style.color = c;
+    }
+  }
+  document.getElementById('matiere').value = m.value;
+  // Pré-remplit couleur si vide
+  const cf = document.getElementById('couleur');
+  if (!cf.value) cf.value = m.couleur;
+  onField();
+}
+
+// Initialise les couleurs des boutons au démarrage
+function initMatButtons() {
+  for (let j = 0; j < MAT_DEFS.length; j++) {
+    const btn = document.getElementById('mb-' + j);
+    if (!btn) continue;
+    const c = MAT_DEFS[j].color;
+    btn.style.borderColor = c + '55';
+    btn.querySelector('.mat-btn-name').style.color = c;
+  }
+}
 
 // ─── CANVAS ────────────────────────────────────────────
 function getFields() {
@@ -1028,14 +1123,13 @@ function drawLabelForPrint(canvas) {
 }
 
 function onField(){updatePreview();}
-window.onField=onField;
-window.toggleJob=function(){
+function toggleJob() {
   jobEnabled=!jobEnabled;
   document.getElementById('jobToggle').classList.toggle('on',jobEnabled);
   document.getElementById('jobFields').classList.toggle('visible',jobEnabled);
   onField();
 };
-window.changeCopies=function(d){
+function changeCopies(d) {
   copies=Math.max(1,Math.min(99,copies+d));
   document.getElementById('copiesVal').textContent=copies;
 };
@@ -1149,7 +1243,7 @@ async function _finalizeBLEConnect() {
 }
 
 // ─── SCAN COMPLET (premier appairage) ─────────────────
-window.connectBLE = async function() {
+async function connectBLE() {
   if(!navigator.bluetooth){
     bleLog('Web Bluetooth non disponible. Utilisez Chrome.','err');
     showToast('❌ Chrome requis pour le BLE');
@@ -1206,7 +1300,7 @@ async function printViaProxy(){
   const res=await resp.json();
   if(!res.ok)throw new Error(res.error||'Erreur proxy');
 }
-window.saveProxy=async function(){
+async function saveProxy() {
   const val=document.getElementById('proxyInput').value.trim();
   proxyUrl=val;
   const res=document.getElementById('proxyTestResult');
@@ -1224,7 +1318,7 @@ window.saveProxy=async function(){
 };
 
 // ─── IMPRESSION ────────────────────────────────────────
-window.doPrint = async function() {
+async function doPrint() {
   const mat=document.getElementById('matiere').value.trim();
   if(!mat){showToast('⚠ Entrez le nom de la matière');return;}
 
@@ -1313,7 +1407,7 @@ async function autoSaveToStock(mat, ep, unite, couleur, h, lon, ud) {
 }
 
 // ─── STOCK CRUD ────────────────────────────────────────
-window.adj = async function(id, d) {
+async function adj(id, d) {
   const p=stock.find(x=>x.id===id);if(!p)return;
   const newQty=Math.max(0,(p.qty||0)+d);
   try{
@@ -1323,13 +1417,13 @@ window.adj = async function(id, d) {
   }catch(e){showToast('❌ Erreur mise à jour stock');}
 };
 
-window.delPlate = async function(id) {
+async function delPlate(id) {
   const p=stock.find(x=>x.id===id);if(!p)return;
   if(!confirm(`Supprimer "${p.famille}" du stock ?`))return;
   try{await fbDelete(id);}catch(e){showToast('❌ Erreur suppression');}
 };
 
-window.printFromStock = function(id) {
+function printFromStock(id) {
   const p=stock.find(x=>x.id===id);if(!p)return;
   document.getElementById('matiere').value   = p.famille.toUpperCase();
   document.getElementById('epaisseur').value = p.ep||'';
@@ -1338,14 +1432,15 @@ window.printFromStock = function(id) {
   document.getElementById('dimH').value      = p.h||'';
   document.getElementById('dimL').value      = p.l||'';
   document.getElementById('uniteD').value    = p.ud||'mm';
-  const idx = PRESETS.findIndex(pr => pr.value === p.famille.toUpperCase());
-  if (idx >= 0) setPreset(idx);
+  const idx = MAT_DEFS.findIndex(m => m.value === p.famille.toUpperCase());
+  if (idx >= 0) selectMat(idx);
+  else initMatButtons();
   updatePreview();
   switchTab('label');
   showToast('✓ Données chargées → prêt à imprimer');
-};
+}
 
-window.openAddModal = function(plateId) {
+function openAddModal(plateId) {
   ['mId','mNewFam','mCouleur','mEp','mH','mL','mEmpl'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mFam').value='';
   document.getElementById('mQty').value='1';
@@ -1373,14 +1468,14 @@ window.openAddModal = function(plateId) {
   document.getElementById('modalBackdrop').classList.add('show');
 };
 
-window.closeAddModal = function(e) {
+function closeAddModal(e) {
   if(e&&e.target!==document.getElementById('modalBackdrop'))return;
   document.getElementById('modalBackdrop').classList.remove('show');
 };
-window.onMFamChange = function() {
+function onMFamChange() {
   document.getElementById('mNewFamRow').style.display=document.getElementById('mFam').value==='__new__'?'':'none';
 };
-window.savePlate = async function() {
+async function savePlate() {
   let fam=document.getElementById('mFam').value;
   if(fam==='__new__')fam=document.getElementById('mNewFam').value.trim();
   if(!fam){showToast('⚠ Choisissez une famille');return;}
@@ -1410,12 +1505,12 @@ function updateBadge(){
   b.style.display=stock.length?'inline-block':'none';
 }
 
-window.setStateFilter=function(f){
+function setStateFilter(f) {
   currentStateFilter=f;
   ['all','low','empty'].forEach(x=>document.getElementById('fc-'+x).classList.toggle('active',x===f));
   renderStock();
 };
-window.setSort=function(s){
+function setSort(s) {
   currentSort=s;
   ['mat','date'].forEach(x=>document.getElementById('sort-'+x).classList.toggle('active',x===s));
   renderStock();
@@ -1434,9 +1529,9 @@ function renderFamilyChips(){
         style="${active?`background:${col};border-color:${col};color:#fff;`:`border-color:${col}55;color:${col};`}">${f} (${cnt})</button>`;
     }).join('');
 }
-window.setFamilyFilter=function(f){currentFamily=f;renderStock();};
+function setFamilyFilter(f) {currentFamily=f;renderStock();};
 
-window.clearSizeFilter = function() {
+function clearSizeFilter() {
   document.getElementById('filterL').value='';
   document.getElementById('filterH').value='';
   document.getElementById('sizeClearBtn').style.display='none';
@@ -1566,15 +1661,17 @@ function renderHist(){
     </div>`;
   }).join('');
 }
-window.reloadHist=function(i){
+function reloadHist(i) {
   const h=hist[i];
   document.getElementById('matiere').value   =h.mat;
   document.getElementById('epaisseur').value =h.ep||'';
   document.getElementById('unite').value     =h.unite||'mm';
-  const idx = PRESETS.findIndex(p => p.value === h.mat);
-  if (idx >= 0) setPreset(idx);
-  onField();showToast('↩ Rechargé');
-};
+  // Sync boutons matière
+  const idx = MAT_DEFS.findIndex(p => p.value === h.mat);
+  if (idx >= 0) selectMat(idx);
+  else initMatButtons(); // reset visuellement
+  onField(); showToast('↩ Rechargé');
+}
 
 // ─── STATUS / SHEETS ───────────────────────────────────
 function setStatus(state,detail){
@@ -1594,18 +1691,18 @@ function setStatus(state,detail){
   }
 }
 
-window.openConnSheet=function(){
+function openConnSheet() {
   document.getElementById('proxyInput').value=proxyUrl;
   document.getElementById('proxyTestResult').style.display='none';
   document.getElementById('sheetBackdrop').classList.add('show');
   document.getElementById('connSheet').classList.add('show');
 };
-window.closeConnSheet=function(){
+function closeConnSheet() {
   document.getElementById('sheetBackdrop').classList.remove('show');
   document.getElementById('connSheet').classList.remove('show');
 };
 
-window.switchTab=function(t){
+function switchTab(t) {
   document.getElementById('tab-label').classList.toggle('active',t==='label');
   document.getElementById('tab-stock').classList.toggle('active',t==='stock');
   document.getElementById('view-label').classList.toggle('active',t==='label');
@@ -1619,7 +1716,6 @@ function showToast(msg){
   t.textContent=msg;t.classList.add('show');
   clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2800);
 }
-window.showToast=showToast;
 
 // Swipe sheet
 let _sy=0;
@@ -1628,14 +1724,42 @@ document.getElementById('connSheet').addEventListener('touchend',e=>{if(e.change
 
 // ─── INIT ──────────────────────────────────────────────
 buildPresets();
+initMatButtons();
 updatePreview();
 renderHist();
 if(proxyUrl) setStatus('ok_proxy', proxyUrl);
 
-// ─── RECONNEXION RAPIDE BLE ────────────────────────────
-// Mémorise le nom de la dernière imprimante BLE utilisée
-const LAST_BLE_KEY = 'ct_last_ble_name';
+// ── Expose toutes les fonctions au scope global (requis pour onclick en module ES) ──
+window.onField          = onField;
+window.toggleJob        = toggleJob;
+window.changeCopies     = changeCopies;
+window.doPrint          = doPrint;
+window.switchTab        = switchTab;
+window.openConnSheet    = openConnSheet;
+window.closeConnSheet   = closeConnSheet;
+window.connectBLE       = connectBLE;
+window.saveProxy        = saveProxy;
+window.adj              = adj;
+window.delPlate         = delPlate;
+window.printFromStock   = printFromStock;
+window.openAddModal     = openAddModal;
+window.closeAddModal    = closeAddModal;
+window.savePlate        = savePlate;
+window.onMFamChange     = onMFamChange;
+window.exportStock      = exportStock;
+window.clearSizeFilter  = clearSizeFilter;
+window.setStateFilter   = setStateFilter;
+window.setSort          = setSort;
+window.setFamilyFilter  = setFamilyFilter;
+window.reloadHist       = reloadHist;
+window.quickReconnect   = quickReconnect;
+window.hidReconnectBanner = hidReconnectBanner;
+window.setPreset        = setPreset;
+window.selectMat        = selectMat;
+window.renderStock      = renderStock;
+window.showToast        = showToast;
 
+// ─── RECONNEXION RAPIDE BLE ────────────────────────────
 function updateQuickReconnectBtn() {
   const name = localStorage.getItem(LAST_BLE_KEY);
   const wrap = document.getElementById('quickReconnectWrap');
@@ -1648,7 +1772,7 @@ function updateQuickReconnectBtn() {
   }
 }
 
-window.quickReconnect = async function() {
+async function quickReconnect() {
   if (!navigator.bluetooth) { showToast('❌ Chrome requis pour le BLE'); return; }
   const name = localStorage.getItem(LAST_BLE_KEY);
   document.getElementById('bleLog').innerHTML='';
