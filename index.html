@@ -670,10 +670,115 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 <div class="toast" id="toast"></div>
 
 <!-- Firebase CDN -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+<script>
+// ── Firebase avec fallback localStorage ──────────────────
+// SDK chargé dynamiquement — fallback immédiat si indisponible
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDxqcyiJCgbCXt1AKkKdqF7ddSFJKq1_tE",
+  authDomain: "plate-id-e47c8.firebaseapp.com",
+  projectId: "plate-id-e47c8",
+  storageBucket: "plate-id-e47c8.firebasestorage.app",
+  messagingSenderId: "791793076873",
+  appId: "1:791793076873:web:aaf1135836da401a765458"
+};
+
+// Mock db localStorage (fallback quand Firebase indisponible)
+const STOCK_KEY = 'ct_stock_local';
+function loadLocalStock() {
+  try { return JSON.parse(localStorage.getItem(STOCK_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveLocalStock(data) {
+  localStorage.setItem(STOCK_KEY, JSON.stringify(data));
+}
+
+// db = objet qui imite l'API Firestore compat
+// Sera remplacé par le vrai db si Firebase se charge
+let db = {
+  _mode: 'local',
+  collection: function(name) {
+    return {
+      onSnapshot: function(cb, errCb) {
+        // Charge depuis localStorage immédiatement
+        const docs = loadLocalStock().map(d => ({
+          id: d.id,
+          data: () => d
+        }));
+        cb({ docs });
+        return () => {}; // unsubscribe noop
+      },
+      doc: function(id) {
+        return {
+          set: async function(data) {
+            const stock = loadLocalStock();
+            const idx = stock.findIndex(d => d.id === id);
+            const clean = {...data};
+            delete clean.updatedAt;
+            if(idx >= 0) stock[idx] = {id, ...clean};
+            else stock.push({id, ...clean});
+            saveLocalStock(stock);
+          },
+          update: async function(data) {
+            const stock = loadLocalStock();
+            const idx = stock.findIndex(d => d.id === id);
+            if(idx >= 0) {
+              const clean = {...data};
+              delete clean.updatedAt;
+              stock[idx] = {...stock[idx], ...clean};
+              saveLocalStock(stock);
+            }
+          },
+          delete: async function() {
+            const stock = loadLocalStock().filter(d => d.id !== id);
+            saveLocalStock(stock);
+          }
+        };
+      }
+    };
+  }
+};
+
+// Tente de charger Firebase en arrière-plan
+(function loadFirebase() {
+  const s1 = document.createElement('script');
+  s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+  s1.onload = function() {
+    const s2 = document.createElement('script');
+    s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+    s2.onload = function() {
+      try {
+        if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        const realDb = firebase.firestore();
+        // Remplace le mock par le vrai db
+        db = realDb;
+        // Relance l'écoute temps réel
+        if(typeof setSyncStatus === 'function') {
+          setSyncStatus('connecting');
+          db.collection('plateStock').onSnapshot(snap => {
+            if(typeof stock !== 'undefined') {
+              stock = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            }
+            if(typeof setSyncStatus === 'function') setSyncStatus('live');
+            if(typeof renderStock === 'function') renderStock();
+            if(typeof updateBadge === 'function') updateBadge();
+          }, err => {
+            if(typeof setSyncStatus === 'function') setSyncStatus('error');
+          });
+        }
+      } catch(e) {
+        console.warn('Firebase init failed:', e.message);
+      }
+    };
+    s2.onerror = function() { console.warn('Firebase Firestore CDN unavailable'); };
+    document.head.appendChild(s2);
+  };
+  s1.onerror = function() { console.warn('Firebase App CDN unavailable — using localStorage'); };
+  document.head.appendChild(s1);
+})();
+
+// serverTimestamp mock
+const serverTimestamp = () => ({'.sv': 'timestamp'});
+</script>
+<script>
 
 // ─── FIREBASE CONFIG ───────────────────────────────────
 const firebaseConfig = {
@@ -685,8 +790,8 @@ const firebaseConfig = {
   appId: "1:791793076873:web:aaf1135836da401a765458"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+// Firebase initialisé via CDN compat (voir script précédent)
+
 const COLL = 'plateStock';
 
 // ─── ÉTAT LOCAL ────────────────────────────────────────
@@ -709,7 +814,7 @@ function setSyncStatus(state) {
 
 // ─── FIREBASE REALTIME ─────────────────────────────────
 setSyncStatus('connecting');
-onSnapshot(collection(db, COLL), snap => {
+db.collection(COLL).onSnapshot( snap => {
   stock = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   setSyncStatus('live');
   renderStock();
@@ -720,13 +825,13 @@ onSnapshot(collection(db, COLL), snap => {
 });
 
 async function fbSet(id, data) {
-  await setDoc(doc(db, COLL, id), { ...data, updatedAt: serverTimestamp() });
+  await db.collection(COLL).doc(id).set({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
 }
 async function fbUpdate(id, data) {
-  await updateDoc(doc(db, COLL, id), { ...data, updatedAt: serverTimestamp() });
+  await db.collection(COLL).doc(id).update( { ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
 }
 async function fbDelete(id) {
-  await deleteDoc(doc(db, COLL, id));
+  await db.collection(COLL).doc(id).delete();
 }
 
 // ─── EXPORT STOCK ──────────────────────────────────────
@@ -1153,55 +1258,6 @@ async function _gattConnect(server) {
 }
 
 // ─── FIN DE CONNEXION (commun à tous les chemins) ──────
-async function _finalizeBLEConnect() {
-  // Listener déconnexion — propose reconnexion automatique
-  bleDevice.addEventListener('gattserverdisconnected', async () => {
-    bleConnected=false; bleChar=null;
-    setStatus('disconnected');
-    bleLog('Déconnecté — tentative de reconnexion…','warn');
-    showToast('⚠ Déconnectée — reconnexion…');
-    // Reconnexion silencieuse (l'objet bleDevice est déjà appairé)
-    await new Promise(r=>setTimeout(r,1500));
-    try {
-      const server = await bleDevice.gatt.connect();
-      bleLog('Reconnexion GATT OK','ok');
-      await _gattConnect(server);
-      if(bleChar){
-        bleConnected=true;
-        setStatus('ok_ble', bleDevice.name||'CT221B');
-        showToast(`✅ Reconnectée !`);
-        bleLog('Prêt à imprimer !','ok');
-        hidReconnectBanner();
-      }
-    } catch(e) {
-      bleLog('Reconnexion silencieuse échouée : '+e.message,'warn');
-      showReconnectBanner();
-    }
-  });
-
-  setStatus('connecting');
-  bleLog(`Connexion GATT…`);
-  const server = await bleDevice.gatt.connect();
-  bleLog('GATT connecté','ok');
-  await _gattConnect(server);
-
-  if(!bleChar){
-    bleLog('Aucune caractéristique d\'écriture trouvée','err');
-    showToast('❌ Aucun service BLE compatible');
-    setStatus('error');
-    return;
-  }
-
-  bleConnected=true;
-  const devName = bleDevice.name||'CT221B';
-  localStorage.setItem(LAST_BLE_KEY, devName);
-  updateQuickReconnectBtn();
-  setStatus('ok_ble', devName);
-  showToast(`✅ ${devName} connectée !`);
-  bleLog('Prêt à imprimer !','ok');
-  hidReconnectBanner();
-  closeConnSheet();
-}
 
 // ─── SCAN COMPLET (premier appairage) ─────────────────
 async function connectBLE() {
@@ -1679,250 +1735,175 @@ function showToast(msg){
 }
 
 // Swipe sheet
-let _sy=0;
-document.getElementById('connSheet').addEventListener('touchstart',e=>{_sy=e.touches[0].clientY;},{passive:true});
-document.getElementById('connSheet').addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-_sy>70)closeConnSheet();},{passive:true});
-
-
-// ─── INIT — tous les handlers via addEventListener ──────
-buildPresets();
-initMatButtons();
-updatePreview();
-renderHist();
-if(proxyUrl) setStatus('ok_proxy', proxyUrl);
-
-// ── Délégation stock cards ──
-document.getElementById('platesScroll').addEventListener('click', e => {
-  const btn = e.target.closest('[data-action]');
-  if(!btn) return;
-  const card = btn.closest('[data-id]');
-  const id = card?.dataset.id;
-  const action = btn.dataset.action;
-  if(action === 'adj' && id) adj(id, parseInt(btn.dataset.d));
-  if(action === 'print' && id) printFromStock(id);
-  if(action === 'edit' && id) openAddModal(id);
-  if(action === 'del' && id) delPlate(id);
-});
-
-// ── Délégation family chips (générés dynamiquement) ──
-document.getElementById('familyChips').addEventListener('click', e => {
-  const btn = e.target.closest('[data-fam]');
-  if(btn) setFamilyFilter(btn.dataset.fam);
-});
-document.getElementById('tab-label').addEventListener('click', () => switchTab('label'));
-document.getElementById('tab-stock').addEventListener('click', () => switchTab('stock'));
-
-// ── Boutons matière (9 boutons) ──
-for(let i=0;i<9;i++){
-  const btn = document.getElementById('mb-'+i);
-  if(btn) btn.addEventListener('click', () => selectMat(i));
-}
-
-// ── Connexion imprimante ──
-document.getElementById('printerPill').addEventListener('click', openConnSheet);
-const connCloseBtns = document.querySelectorAll('.conn-close,.btn-cancel-conn');
-connCloseBtns.forEach(b => b.addEventListener('click', closeConnSheet));
-document.getElementById('sheetBackdrop').addEventListener('click', closeConnSheet);
-const connOption = document.querySelector('.conn-option');
-if(connOption) connOption.addEventListener('click', connectBLE);
-const quickWrap = document.getElementById('quickReconnectWrap');
-if(quickWrap) quickWrap.querySelector('button')?.addEventListener('click', quickReconnect);
-document.querySelector('.proxy-ok')?.addEventListener('click', saveProxy);
-
-// ── Bannière reconnexion ──
-const bnr = document.getElementById('reconnectBanner');
-if(bnr){
-  bnr.querySelector('[onclick*="quickReconnect"]') // nettoyé — on utilise les boutons par ordre
-  const bnrBtns = bnr.querySelectorAll('button');
-  if(bnrBtns[0]) bnrBtns[0].addEventListener('click', () => { quickReconnect(); hidReconnectBanner(); });
-  if(bnrBtns[1]) bnrBtns[1].addEventListener('click', hidReconnectBanner);
-}
-
-// ── Étiquette — champs ──
-document.getElementById('matiere').addEventListener('input', onField);
-document.getElementById('epaisseur').addEventListener('input', onField);
-document.getElementById('unite').addEventListener('change', onField);
-document.getElementById('couleur').addEventListener('input', onField);
-document.getElementById('dimL').addEventListener('input', onField);
-document.getElementById('dimH').addEventListener('input', onField);
-document.getElementById('uniteD').addEventListener('change', onField);
-document.getElementById('remarque')?.addEventListener('input', onField);
-document.getElementById('emplacement')?.addEventListener('input', onField);
-document.getElementById('jobName')?.addEventListener('input', onField);
-document.getElementById('jobNum')?.addEventListener('input', onField);
-
-// ── Toggle job ──
-document.querySelector('.toggle-row')?.addEventListener('click', toggleJob);
-
-// ── Copies ──
-const qtyBtns = document.querySelectorAll('.qty-btn');
-if(qtyBtns[0]) qtyBtns[0].addEventListener('click', () => changeCopies(-1));
-if(qtyBtns[1]) qtyBtns[1].addEventListener('click', () => changeCopies(1));
-
-// ── Imprimer ──
-document.getElementById('btnPrint').addEventListener('click', doPrint);
-
-// ── Stock toolbar ──
-document.getElementById('stockSearch').addEventListener('input', renderStock);
-document.getElementById('filterL').addEventListener('input', renderStock);
-document.getElementById('filterH').addEventListener('input', renderStock);
-document.getElementById('filterUnit').addEventListener('change', renderStock);
-document.querySelector('.btn-add')?.addEventListener('click', () => openAddModal());
-document.querySelector('.btn-export')?.addEventListener('click', exportStock);
-document.querySelector('.size-clear')?.addEventListener('click', clearSizeFilter);
-document.getElementById('fc-all').addEventListener('click', () => setStateFilter('all'));
-document.getElementById('fc-low').addEventListener('click', () => setStateFilter('low'));
-document.getElementById('fc-empty').addEventListener('click', () => setStateFilter('empty'));
-document.getElementById('sort-mat').addEventListener('click', () => setSort('mat'));
-document.getElementById('sort-date').addEventListener('click', () => setSort('date'));
-
-// ── Modal plaque ──
-document.getElementById('modalBackdrop').addEventListener('click', (e) => {
-  if(e.target === document.getElementById('modalBackdrop')) closeAddModal();
-});
-document.querySelector('.modal-cancel')?.addEventListener('click', closeAddModal);
-document.querySelector('.modal-ok')?.addEventListener('click', savePlate);
-document.getElementById('mFam').addEventListener('change', onMFamChange);
-
-// ── Historique items — délégation ──
-document.getElementById('histList').addEventListener('click', e => {
-  const item = e.target.closest('.hist-item');
-  if(item) reloadHist(parseInt(item.dataset.idx));
-});
-
-// ── Swipe sheet ──
-let _sy=0;
-const connSheet = document.getElementById('connSheet');
-connSheet.addEventListener('touchstart', e=>{ _sy=e.touches[0].clientY; },{passive:true});
-connSheet.addEventListener('touchend',   e=>{ if(e.changedTouches[0].clientY-_sy>70) closeConnSheet(); },{passive:true});
-
-// ── Reconnexion auto au démarrage ──
-setTimeout(() => {
-  const name = localStorage.getItem(LAST_BLE_KEY);
-  if(name && navigator.bluetooth && !bleConnected && !proxyUrl) showReconnectBanner();
-}, 1200);
-updateQuickReconnectBtn();
-
-console.info('%c📦 Plate ID — Firebase: plate-id-e47c8', 'font-weight:bold;color:#e8920a');
-
+let _sy = 0;
+const _cs = document.getElementById('connSheet');
+_cs.addEventListener('touchstart', e=>{ _sy=e.touches[0].clientY; },{passive:true});
+_cs.addEventListener('touchend',   e=>{ if(e.changedTouches[0].clientY-_sy>70) closeConnSheet(); },{passive:true});
 
 // ─── RECONNEXION RAPIDE BLE ────────────────────────────
 function updateQuickReconnectBtn() {
   const name = localStorage.getItem(LAST_BLE_KEY);
   const wrap = document.getElementById('quickReconnectWrap');
   const lbl  = document.getElementById('quickReconnectLabel');
-  if (name && navigator.bluetooth) {
-    lbl.textContent = `Reconnecter "${name}"`;
+  if(!wrap) return;
+  if(name && navigator.bluetooth) {
+    if(lbl) lbl.textContent = 'Reconnecter "' + name + '"';
     wrap.style.display = '';
   } else {
     wrap.style.display = 'none';
   }
 }
 
-async function quickReconnect() {
-  if (!navigator.bluetooth) { showToast('❌ Chrome requis pour le BLE'); return; }
+function showReconnectBanner() {
+  const b = document.getElementById('reconnectBanner');
+  if(!b) return;
   const name = localStorage.getItem(LAST_BLE_KEY);
-  document.getElementById('bleLog').innerHTML='';
-  bleLog(`Reconnexion vers "${name}"…`);
+  if(!name || !navigator.bluetooth) return;
+  const n = document.getElementById('reconnectBannerName');
+  if(n) n.textContent = name;
+  b.style.display = 'flex';
+}
+
+function hidReconnectBanner() {
+  const b = document.getElementById('reconnectBanner');
+  if(b) b.style.display = 'none';
+}
+
+async function quickReconnect() {
+  if(!navigator.bluetooth) { showToast('❌ Chrome requis pour le BLE'); return; }
+  const name = localStorage.getItem(LAST_BLE_KEY);
+  document.getElementById('bleLog').innerHTML = '';
+  bleLog('Reconnexion vers "' + name + '"…');
   try {
     setStatus('searching');
-    // Demande filtrée sur le nom connu → dialog plus rapide
     bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{name}],
-      optionalServices: BLE_SVCS
+      filters: [{name: name}], optionalServices: BLE_SVCS
     });
     await _finalizeBLEConnect();
   } catch(e) {
-    if (e.name !== 'NotFoundError') {
-      bleLog('Reconnexion filtrée échouée, scan complet…','warn');
-      // Fallback : scan complet
+    if(e.name !== 'NotFoundError') {
       try {
-        bleDevice = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true, optionalServices: BLE_SVCS
-        });
+        bleDevice = await navigator.bluetooth.requestDevice({acceptAllDevices:true, optionalServices:BLE_SVCS});
         await _finalizeBLEConnect();
       } catch(e2) {
-        if (e2.name !== 'NotFoundError') showToast('❌ ' + e2.message);
+        if(e2.name !== 'NotFoundError') showToast('❌ ' + e2.message);
         setStatus('disconnected');
       }
-    } else {
-      setStatus('disconnected');
-    }
+    } else { setStatus('disconnected'); }
   }
-};
+}
 
-// Factorisation de la connexion GATT (utilisée par connectBLE et quickReconnect)
-async function _finalizeBLEConnect() {
-  bleDevice.addEventListener('gattserverdisconnected', () => {
-    bleConnected=false; bleChar=null;
-    setStatus('disconnected'); showToast('⚠ Imprimante déconnectée');
-    // Propose reconnexion automatique après 2s
-    setTimeout(() => {
-      if (!bleConnected) showReconnectBanner();
-    }, 2000);
+// ── INIT — tous les addEventListener ─────────────────────
+(function init() {
+
+  // Boutons matière (9 boutons hardcodés dans le HTML)
+  for(let i = 0; i < 9; i++) {
+    (function(idx) {
+      const btn = document.getElementById('mb-' + idx);
+      if(btn) btn.addEventListener('click', function() { selectMat(idx); });
+    })(i);
+  }
+
+  // Onglets
+  document.getElementById('tab-label').addEventListener('click', function() { switchTab('label'); });
+  document.getElementById('tab-stock').addEventListener('click', function() { switchTab('stock'); });
+
+  // Connexion imprimante
+  document.getElementById('printerPill').addEventListener('click', openConnSheet);
+  document.querySelector('.conn-close')?.addEventListener('click', closeConnSheet);
+  document.getElementById('sheetBackdrop').addEventListener('click', closeConnSheet);
+  document.querySelectorAll('.conn-option').forEach(function(b) { b.addEventListener('click', connectBLE); });
+  const qrw = document.getElementById('quickReconnectWrap');
+  if(qrw) qrw.querySelector('button')?.addEventListener('click', quickReconnect);
+  document.querySelector('.proxy-ok')?.addEventListener('click', saveProxy);
+
+  // Bannière reconnexion
+  const bnrBtns = document.getElementById('reconnectBanner')?.querySelectorAll('button');
+  if(bnrBtns) {
+    if(bnrBtns[0]) bnrBtns[0].addEventListener('click', function() { quickReconnect(); hidReconnectBanner(); });
+    if(bnrBtns[1]) bnrBtns[1].addEventListener('click', hidReconnectBanner);
+  }
+
+  // Champs étiquette
+  ['matiere','epaisseur','couleur','dimL','dimH','remarque','emplacement','jobName','jobNum'].forEach(function(id) {
+    document.getElementById(id)?.addEventListener('input', onField);
   });
-  setStatus('connecting');
-  bleLog(`Connexion GATT vers ${bleDevice.name||'?'}…`);
-  const server = await bleDevice.gatt.connect();
-  bleLog('GATT connecté','ok');
-  let svcs=[]; try{svcs=await server.getPrimaryServices();}catch(e){}
-  bleLog(`Services: ${svcs.length}`);
-  for(const s of svcs){
-    try{
-      const cs=await s.getCharacteristics();
-      for(const c of cs) if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}
-      if(bleChar)break;
-    }catch(e){}
-  }
-  if(!bleChar){
-    for(const su of BLE_SVCS){
-      try{
-        const s=await server.getPrimaryService(su);
-        for(const cu of BLE_CHARS){
-          try{const c=await s.getCharacteristic(cu);if(c.properties.write||c.properties.writeWithoutResponse){bleChar=c;break;}}catch(e){}
-        }
-        if(bleChar)break;
-      }catch(e){}
-    }
-  }
-  if(!bleChar){showToast('❌ Service BLE non trouvé');setStatus('error');return;}
-  bleConnected=true;
-  const devName = bleDevice.name||'CT221B';
-  localStorage.setItem(LAST_BLE_KEY, devName);
-  setStatus('ok_ble', devName);
-  showToast(`✅ ${devName} connectée !`);
-  bleLog(`Prêt à imprimer !`,'ok');
+  document.getElementById('unite')?.addEventListener('change', onField);
+  document.getElementById('uniteD')?.addEventListener('change', onField);
+
+  // Toggle job
+  document.querySelector('.toggle-row')?.addEventListener('click', toggleJob);
+
+  // Copies
+  const qtyBtns = document.querySelectorAll('.qty-btn');
+  if(qtyBtns[0]) qtyBtns[0].addEventListener('click', function() { changeCopies(-1); });
+  if(qtyBtns[1]) qtyBtns[1].addEventListener('click', function() { changeCopies(1); });
+
+  // Imprimer
+  document.getElementById('btnPrint').addEventListener('click', doPrint);
+
+  // Stock toolbar
+  document.getElementById('stockSearch').addEventListener('input', renderStock);
+  document.getElementById('filterL').addEventListener('input', renderStock);
+  document.getElementById('filterH').addEventListener('input', renderStock);
+  document.getElementById('filterUnit').addEventListener('change', renderStock);
+  document.querySelector('.btn-add')?.addEventListener('click', function() { openAddModal(); });
+  document.querySelector('.btn-export')?.addEventListener('click', exportStock);
+  document.querySelector('.size-clear')?.addEventListener('click', clearSizeFilter);
+  document.getElementById('fc-all')?.addEventListener('click', function() { setStateFilter('all'); });
+  document.getElementById('fc-low')?.addEventListener('click', function() { setStateFilter('low'); });
+  document.getElementById('fc-empty')?.addEventListener('click', function() { setStateFilter('empty'); });
+  document.getElementById('sort-mat')?.addEventListener('click', function() { setSort('mat'); });
+  document.getElementById('sort-date')?.addEventListener('click', function() { setSort('date'); });
+
+  // Délégation stock cards
+  document.getElementById('platesScroll').addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    const card = btn.closest('[data-id]');
+    const id = card?.dataset.id;
+    const action = btn.dataset.action;
+    if(action === 'adj' && id) adj(id, parseInt(btn.dataset.d));
+    if(action === 'print' && id) printFromStock(id);
+    if(action === 'edit' && id) openAddModal(id);
+    if(action === 'del' && id) delPlate(id);
+  });
+
+  // Délégation family chips (générés dynamiquement)
+  document.getElementById('familyChips').addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-fam]');
+    if(btn !== null && btn !== undefined) setFamilyFilter(btn.dataset.fam);
+  });
+
+  // Délégation historique
+  document.getElementById('histList').addEventListener('click', function(e) {
+    const item = e.target.closest('.hist-item');
+    if(item) reloadHist(parseInt(item.dataset.idx));
+  });
+
+  // Modal plaque
+  document.getElementById('modalBackdrop').addEventListener('click', function(e) {
+    if(e.target === document.getElementById('modalBackdrop')) closeAddModal();
+  });
+  document.querySelector('.modal-cancel')?.addEventListener('click', closeAddModal);
+  document.querySelector('.modal-ok')?.addEventListener('click', savePlate);
+  document.getElementById('mFam')?.addEventListener('change', onMFamChange);
+
+  // Init visuel
+  buildPresets();
+  updatePreview();
+  renderHist();
+  if(localStorage.getItem('ct_proxy')) setStatus('ok_proxy', localStorage.getItem('ct_proxy'));
+
+  // Reconnexion auto
+  setTimeout(function() {
+    const name = localStorage.getItem(LAST_BLE_KEY);
+    if(name && navigator.bluetooth && !bleConnected && !proxyUrl) showReconnectBanner();
+  }, 1200);
   updateQuickReconnectBtn();
-  closeConnSheet();
-  hidReconnectBanner();
-}
 
-// ─── BANNIÈRE DE RECONNEXION ───────────────────────────
-function showReconnectBanner() {
-  let banner = document.getElementById('reconnectBanner');
-  if (!banner) return;
-  const name = localStorage.getItem(LAST_BLE_KEY);
-  if (!name || !navigator.bluetooth) return;
-  document.getElementById('reconnectBannerName').textContent = name;
-  banner.style.display = 'flex';
-}
-function hidReconnectBanner() {
-  const b = document.getElementById('reconnectBanner');
-  if (b) b.style.display = 'none';
-}
-
-// Au démarrage : si une imprimante est connue, afficher la bannière après 1s
-setTimeout(() => {
-  const name = localStorage.getItem(LAST_BLE_KEY);
-  if (name && navigator.bluetooth && !bleConnected && !proxyUrl) {
-    showReconnectBanner();
-  }
-}, 1200);
-
-updateQuickReconnectBtn();
-
-console.info('%c📦 Plate ID — Firebase: plate-id-e47c8', 'font-weight:bold;color:#e8920a');
-console.info('Si le stock ne charge pas, vérifiez les règles Firestore:\nallow read, write: if true;');
+  console.info('%c📦 Plate ID — Firebase: plate-id-e47c8', 'font-weight:bold;color:#e8920a');
+})();
 
 </script>
 </body>
