@@ -1044,83 +1044,86 @@ function getFields() {
 }
 
 function drawLabel(canvas) {
-  // CT221B : rouleau 50mm de large, étiquette 80mm de long
-  // Portrait natif : 400px large × 640px haut (203dpi)
+  // CT221B : rouleau 50mm de large, etiquette 80mm de long
+  // Portrait natif : 400px large x 640px haut (203dpi)
   const W=400, H=640;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
-  const f=getFields(), hasJob=!!(f.jn||f.jnum), MX=20;
+  const f=getFields(), hasJob=!!(f.jn||f.jnum), MX=24;
 
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
 
-  let y=40; // marge top sécurité (≈5mm à 203dpi)
+  // Marges de securite haut et bas (~8mm chacune a 203dpi)
+  const MARGIN_TOP = 60;
+  const MARGIN_BOT = 60;
+  let y = MARGIN_TOP;
 
-  // MATIÈRE — taille auto selon longueur
+  // MATIERE - taille reduite, auto selon longueur du mot
   const ml=(f.mat||'X').length;
-  const matPx=ml<=3?110:ml<=5?88:ml<=8?66:ml<=11?50:ml<=16?36:26;
+  const matPx=ml<=3?72:ml<=5?60:ml<=8?50:ml<=11?40:ml<=16?30:24;
   ctx.font=`900 ${matPx}px Arial,sans-serif`;
   ctx.fillStyle='#000';
-  let matText=f.mat||'MATIÈRE';
+  let matText=f.mat||'MATIERE';
   while(ctx.measureText(matText).width>W-MX*2&&matText.length>1) matText=matText.slice(0,-1);
   ctx.fillText(matText,MX,y+matPx*.88);
   y+=matPx+8;
 
-  // SÉPARATEUR
-  ctx.fillStyle='#000'; ctx.fillRect(MX,y,W-MX*2,3); y+=14;
+  // SEPARATEUR
+  ctx.fillStyle='#000'; ctx.fillRect(MX,y,W-MX*2,2); y+=12;
 
-  // ÉPAISSEUR
+  // EPAISSEUR
   if(f.ep){
-    ctx.font='700 48px Arial,sans-serif'; ctx.fillStyle='#000';
-    ctx.fillText(`${f.ep} ${f.unite}`,MX,y+44); y+=62;
+    ctx.font='700 36px Arial,sans-serif'; ctx.fillStyle='#000';
+    ctx.fillText(`${f.ep} ${f.unite}`,MX,y+32); y+=46;
   }
 
   // COULEUR
   if(f.couleur){
-    ctx.font='400 36px Arial,sans-serif'; ctx.fillStyle='#222';
-    ctx.fillText(`(${f.couleur.toUpperCase()})`,MX,y+32); y+=46;
+    ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#222';
+    ctx.fillText(`(${f.couleur.toUpperCase()})`,MX,y+24); y+=36;
   }
 
-  // DIMENSIONS — Longueur en premier
+  // DIMENSIONS - Longueur en premier
   let dim='';
   if(f.lon) dim+=`L:${f.lon}`;
   if(f.h)   dim+=(dim?' x ':'')+`H:${f.h}`;
   if(dim)   dim+=` ${f.ud}`;
   if(dim){
-    ctx.font='400 36px Arial,sans-serif'; ctx.fillStyle='#000';
-    ctx.fillText(dim,MX,y+32); y+=46;
+    ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#000';
+    ctx.fillText(dim,MX,y+24); y+=36;
   }
 
-  // REMARQUE — après les dimensions
+  // REMARQUE - apres les dimensions
   if(f.rem){
-    ctx.font='400 28px Arial,sans-serif'; ctx.fillStyle='#444';
+    ctx.font='400 22px Arial,sans-serif'; ctx.fillStyle='#444';
     const words=f.rem.split(' ');
     let line='';
     for(const w of words){
       const test=line?line+' '+w:w;
       if(ctx.measureText(test).width>W-MX*2&&line){
-        ctx.fillText(line,MX,y+24); y+=32; line=w;
+        ctx.fillText(line,MX,y+18); y+=26; line=w;
       } else line=test;
     }
-    if(line){ctx.fillText(line,MX,y+24); y+=36;}
+    if(line){ctx.fillText(line,MX,y+18); y+=28;}
   }
 
-  // EMPLACEMENT — sous les remarques
+  // EMPLACEMENT - sous les remarques
   if(f.empl){
-    ctx.font='700 28px Arial,sans-serif'; ctx.fillStyle='#000';
-    ctx.fillText('\u{1F4CD} '+f.empl.substring(0,22),MX,y+24); y+=36;
+    ctx.font='700 22px Arial,sans-serif'; ctx.fillStyle='#000';
+    ctx.fillText('\u{1F4CD} '+f.empl.substring(0,26),MX,y+18); y+=30;
   }
 
-  // JOB
+  // JOB - ancre depuis le bas avec marge de securite
   if(hasJob){
-    const jy0=H-(f.jn&&f.jnum?100:60);
-    ctx.fillStyle='#000'; ctx.fillRect(MX,jy0,W-MX*2,3);
-    let jy=jy0+12;
-    if(f.jn){ctx.font='700 38px Arial,sans-serif';ctx.fillStyle='#000';ctx.fillText(f.jn.substring(0,20),MX,jy+32);jy+=46;}
-    if(f.jnum){ctx.font='400 32px Arial,sans-serif';ctx.fillStyle='#333';ctx.fillText(f.jnum.substring(0,22),MX,jy+28);}
+    const jy0=H-MARGIN_BOT-(f.jn&&f.jnum?80:46);
+    ctx.fillStyle='#000'; ctx.fillRect(MX,jy0,W-MX*2,2);
+    let jy=jy0+10;
+    if(f.jn){ctx.font='700 30px Arial,sans-serif';ctx.fillStyle='#000';ctx.fillText(f.jn.substring(0,22),MX,jy+26);jy+=36;}
+    if(f.jnum){ctx.font='400 24px Arial,sans-serif';ctx.fillStyle='#333';ctx.fillText(f.jnum.substring(0,24),MX,jy+20);}
   } else {
-    ctx.fillStyle='#ccc'; ctx.fillRect(MX,H-28,W-MX*2,1);
-    ctx.font='400 20px Arial,sans-serif'; ctx.fillStyle='#999';
-    ctx.fillText('LuxVisual — Innovative Printing',MX,H-8);
+    ctx.fillStyle='#ccc'; ctx.fillRect(MX,H-MARGIN_BOT-20,W-MX*2,1);
+    ctx.font='400 18px Arial,sans-serif'; ctx.fillStyle='#999';
+    ctx.fillText('LuxVisual - Innovative Printing',MX,H-MARGIN_BOT);
   }
 }
 
