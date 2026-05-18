@@ -8,16 +8,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Plate ID">
-<meta name="theme-color" content="#f0f2f7">
+<meta name="theme-color" content="#003366">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#f0f2f7; --surface:#fff; --surface2:#f5f6fa; --border:#e4e7f0;
   --shadow:0 2px 12px rgba(60,70,110,.09); --shadow-lg:0 8px 32px rgba(60,70,110,.14);
-  --accent:#e8920a; --accent-bg:#fff5e6;
+  --accent: #003366; --accent-bg:#fff5e6;
   --text:#1a1d2e; --muted:#8890a8;
-  --green:#16a34a; --green-bg:#f0fdf4;
+  --green:#0A6E4F; --green-bg:#f0fdf4;
   --red:#dc2626; --red-bg:#fef2f2;
   --amber:#d97706; --amber-bg:#fffbeb;
   --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif;
@@ -334,39 +334,39 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         <!-- BOUTONS MATIÈRE EN DUR — visibles immédiatement -->
         <div class="mat-grid">
           <button class="mat-btn" id="mb-0"
-            style="background:#2563eb;border-color:#2563eb;">
+            style="background:#003366;border-color:#003366;">
             <span class="mat-btn-name" style="color:#fff;">Dibond</span>
           </button>
           <button class="mat-btn" id="mb-1"
-            style="background:#16a34a;border-color:#16a34a;">
+            style="background:#0A6E4F;border-color:#0A6E4F;">
             <span class="mat-btn-name" style="color:#fff;">PVC</span>
           </button>
           <button class="mat-btn" id="mb-2"
-            style="background:#92400e;border-color:#92400e;">
+            style="background:#7A4A1E;border-color:#7A4A1E;">
             <span class="mat-btn-name" style="color:#fff;">MDF</span>
           </button>
           <button class="mat-btn" id="mb-3"
-            style="background:#0891b2;border-color:#0891b2;">
+            style="background:#1A6B8A;border-color:#1A6B8A;">
             <span class="mat-btn-name" style="color:#fff;">Plexiglass</span>
           </button>
           <button class="mat-btn" id="mb-4"
-            style="background:#7c3aed;border-color:#7c3aed;">
+            style="background:#4A4A8A;border-color:#4A4A8A;">
             <span class="mat-btn-name" style="color:#fff;">Beelite</span>
           </button>
           <button class="mat-btn" id="mb-5"
-            style="background:#ea580c;border-color:#ea580c;">
+            style="background:#C25A00;border-color:#C25A00;">
             <span class="mat-btn-name" style="color:#fff;">Polypro</span>
           </button>
           <button class="mat-btn" id="mb-6"
-            style="background:#65a30d;border-color:#65a30d;">
+            style="background:#5A7A1A;border-color:#5A7A1A;">
             <span class="mat-btn-name" style="color:#fff;">Carton</span>
           </button>
           <button class="mat-btn" id="mb-7"
-            style="background:#db2777;border-color:#db2777;">
+            style="background:#8A2A4A;border-color:#8A2A4A;">
             <span class="mat-btn-name" style="color:#fff;">Palboard</span>
           </button>
           <button class="mat-btn" id="mb-8"
-            style="background:#6b7280;border-color:#6b7280;">
+            style="background:#4A5568;border-color:#4A5568;">
             <span class="mat-btn-name" style="color:#fff;">Papier</span>
           </button>
         </div>
@@ -498,13 +498,13 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 <!-- BANNIÈRE RECONNEXION RAPIDE -->
 <div id="reconnectBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:60;background:#f0fdf4;border-bottom:1.5px solid #86efac;padding:10px 16px;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(22,163,74,.15);">
   <div style="font-size:18px;">⚡</div>
-  <div style="flex:1;font-family:var(--sans);font-size:13px;font-weight:600;color:#16a34a;">
+  <div style="flex:1;font-family:var(--sans);font-size:13px;font-weight:600;color:#0A6E4F;">
     Reconnecter <span id="reconnectBannerName" style="font-weight:900;"></span> ?
   </div>
-  <button style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;">
+  <button style="background:#0A6E4F;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;">
     Connecter
   </button>
-  <button style="background:transparent;border:none;color:#16a34a;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
+  <button style="background:transparent;border:none;color:#0A6E4F;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;">✕</button>
 </div>
 
 <!-- BOUTON IMPRIMER -->
@@ -638,7 +638,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     <button class="conn-option" style="border-color:#86efac;background:#f0fdf4;">
       <span class="conn-option-icon">⚡</span>
       <div class="conn-option-text">
-        <strong id="quickReconnectLabel" style="color:#16a34a;">Reconnecter CT221B</strong>
+        <strong id="quickReconnectLabel" style="color:#0A6E4F;">Reconnecter CT221B</strong>
         <span>Dernière imprimante utilisée — 1 tap</span>
       </div>
     </button>
@@ -877,7 +877,7 @@ function exportStock() {
 const MAT_ICONS = {
   DIBOND: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="15" width="36" height="5" rx="2" fill="#93c5fd"/>
-    <rect x="4" y="20" width="36" height="7" rx="0" fill="#1d4ed8"/>
+    <rect x="4" y="20" width="36" height="7" rx="0" fill="#003366"/>
     <rect x="4" y="27" width="36" height="5" rx="2" fill="#93c5fd"/>
     <line x1="4" y1="15" x2="40" y2="15" stroke="#bfdbfe" stroke-width="0.8" opacity="0.7"/>
     <line x1="4" y1="17" x2="40" y2="17" stroke="#bfdbfe" stroke-width="0.6" opacity="0.4"/>
@@ -891,13 +891,13 @@ const MAT_ICONS = {
   </svg>`,
 
   PVC: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="13" width="36" height="20" rx="4" fill="#16a34a"/>
+    <rect x="4" y="13" width="36" height="20" rx="4" fill="#0A6E4F"/>
     <rect x="4" y="13" width="36" height="5" rx="4" fill="#4ade80"/>
     <rect x="4" y="28" width="36" height="5" rx="3" fill="#166534"/>
-    <ellipse cx="14" cy="23" rx="3.5" ry="3" fill="#15803d" opacity="0.55"/>
-    <ellipse cx="22" cy="19" rx="2.5" ry="2" fill="#15803d" opacity="0.45"/>
-    <ellipse cx="29" cy="24" rx="4" ry="3.5" fill="#15803d" opacity="0.5"/>
-    <ellipse cx="37" cy="20" rx="3" ry="2.5" fill="#15803d" opacity="0.55"/>
+    <ellipse cx="14" cy="23" rx="3.5" ry="3" fill="#085C40" opacity="0.55"/>
+    <ellipse cx="22" cy="19" rx="2.5" ry="2" fill="#085C40" opacity="0.45"/>
+    <ellipse cx="29" cy="24" rx="4" ry="3.5" fill="#085C40" opacity="0.5"/>
+    <ellipse cx="37" cy="20" rx="3" ry="2.5" fill="#085C40" opacity="0.55"/>
   </svg>`,
 
   MDF: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
@@ -906,10 +906,10 @@ const MAT_ICONS = {
     <path d="M4 23 Q12 21 22 23 Q32 25 40 23" fill="none" stroke="#92400e" stroke-width="1" opacity="0.5"/>
     <path d="M4 28 Q14 26 24 28 Q34 30 40 28" fill="none" stroke="#92400e" stroke-width="0.8" opacity="0.4"/>
     <rect x="4" y="34" width="36" height="4" rx="2" fill="#92400e"/>
-    <line x1="10" y1="34" x2="10" y2="38" stroke="#78350f" stroke-width="0.8"/>
-    <line x1="17" y1="34" x2="17" y2="38" stroke="#78350f" stroke-width="0.8"/>
-    <line x1="24" y1="34" x2="24" y2="38" stroke="#78350f" stroke-width="0.8"/>
-    <line x1="31" y1="34" x2="31" y2="38" stroke="#78350f" stroke-width="0.8"/>
+    <line x1="10" y1="34" x2="10" y2="38" stroke="#5C3412" stroke-width="0.8"/>
+    <line x1="17" y1="34" x2="17" y2="38" stroke="#5C3412" stroke-width="0.8"/>
+    <line x1="24" y1="34" x2="24" y2="38" stroke="#5C3412" stroke-width="0.8"/>
+    <line x1="31" y1="34" x2="31" y2="38" stroke="#5C3412" stroke-width="0.8"/>
   </svg>`,
 
   PLEXIGLASS: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
@@ -921,38 +921,38 @@ const MAT_ICONS = {
   </svg>`,
 
   BEELITE: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="10" width="36" height="3" rx="1" fill="#7c3aed" opacity="0.4"/>
-    <rect x="4" y="33" width="36" height="3" rx="1" fill="#7c3aed" opacity="0.4"/>
-    <polygon points="22,13 28,17 28,25 22,29 16,25 16,17" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
-    <polygon points="34,19 40,23 40,31 34,35 28,31 28,23" fill="none" stroke="#7c3aed" stroke-width="1.1" opacity="0.45"/>
-    <polygon points="10,19 16,23 16,31 10,35 4,31 4,23"  fill="none" stroke="#7c3aed" stroke-width="1.1" opacity="0.45"/>
+    <rect x="4" y="10" width="36" height="3" rx="1" fill="#4A4A8A" opacity="0.4"/>
+    <rect x="4" y="33" width="36" height="3" rx="1" fill="#4A4A8A" opacity="0.4"/>
+    <polygon points="22,13 28,17 28,25 22,29 16,25 16,17" fill="none" stroke="#4A4A8A" stroke-width="1.6"/>
+    <polygon points="34,19 40,23 40,31 34,35 28,31 28,23" fill="none" stroke="#4A4A8A" stroke-width="1.1" opacity="0.45"/>
+    <polygon points="10,19 16,23 16,31 10,35 4,31 4,23"  fill="none" stroke="#4A4A8A" stroke-width="1.1" opacity="0.45"/>
   </svg>`,
 
   'POLYPRO ALVÉOLAIRE': `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="12" width="36" height="22" rx="2" fill="#fed7aa"/>
-    <rect x="4" y="12" width="36" height="4"  rx="2" fill="#ea580c" opacity="0.7"/>
-    <rect x="4" y="30" width="36" height="4"  rx="1" fill="#ea580c" opacity="0.7"/>
-    <line x1="11" y1="16" x2="11" y2="30" stroke="#ea580c" stroke-width="1.4" opacity="0.55"/>
-    <line x1="18" y1="16" x2="18" y2="30" stroke="#ea580c" stroke-width="1.4" opacity="0.55"/>
-    <line x1="25" y1="16" x2="25" y2="30" stroke="#ea580c" stroke-width="1.4" opacity="0.55"/>
-    <line x1="32" y1="16" x2="32" y2="30" stroke="#ea580c" stroke-width="1.4" opacity="0.55"/>
+    <rect x="4" y="12" width="36" height="4"  rx="2" fill="#C25A00" opacity="0.7"/>
+    <rect x="4" y="30" width="36" height="4"  rx="1" fill="#C25A00" opacity="0.7"/>
+    <line x1="11" y1="16" x2="11" y2="30" stroke="#C25A00" stroke-width="1.4" opacity="0.55"/>
+    <line x1="18" y1="16" x2="18" y2="30" stroke="#C25A00" stroke-width="1.4" opacity="0.55"/>
+    <line x1="25" y1="16" x2="25" y2="30" stroke="#C25A00" stroke-width="1.4" opacity="0.55"/>
+    <line x1="32" y1="16" x2="32" y2="30" stroke="#C25A00" stroke-width="1.4" opacity="0.55"/>
   </svg>`,
 
   'CARTON E-GOLF': `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="11" width="36" height="4" rx="1" fill="#65a30d" opacity="0.75"/>
-    <path d="M4 15 Q8 22 12 15 Q16 8 20 15 Q24 22 28 15 Q32 8 36 15 L40 15" fill="none" stroke="#65a30d" stroke-width="2"/>
-    <rect x="4" y="27" width="36" height="4" rx="1" fill="#65a30d" opacity="0.75"/>
-    <rect x="4" y="31" width="36" height="6" rx="2" fill="#65a30d" opacity="0.3"/>
+    <rect x="4" y="11" width="36" height="4" rx="1" fill="#5A7A1A" opacity="0.75"/>
+    <path d="M4 15 Q8 22 12 15 Q16 8 20 15 Q24 22 28 15 Q32 8 36 15 L40 15" fill="none" stroke="#5A7A1A" stroke-width="2"/>
+    <rect x="4" y="27" width="36" height="4" rx="1" fill="#5A7A1A" opacity="0.75"/>
+    <rect x="4" y="31" width="36" height="6" rx="2" fill="#5A7A1A" opacity="0.3"/>
   </svg>`,
 
   PALBOARD: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="12" width="36" height="22" rx="3" fill="#f9a8d4"/>
-    <rect x="4" y="12" width="36" height="5" rx="3" fill="#db2777"/>
-    <rect x="4" y="29" width="36" height="5" rx="2" fill="#db2777"/>
-    <line x1="11" y1="17" x2="11" y2="29" stroke="#be185d" stroke-width="1" opacity="0.45"/>
-    <line x1="18" y1="17" x2="18" y2="29" stroke="#be185d" stroke-width="1" opacity="0.45"/>
-    <line x1="25" y1="17" x2="25" y2="29" stroke="#be185d" stroke-width="1" opacity="0.45"/>
-    <line x1="32" y1="17" x2="32" y2="29" stroke="#be185d" stroke-width="1" opacity="0.45"/>
+    <rect x="4" y="12" width="36" height="5" rx="3" fill="#8A2A4A"/>
+    <rect x="4" y="29" width="36" height="5" rx="2" fill="#8A2A4A"/>
+    <line x1="11" y1="17" x2="11" y2="29" stroke="#6B1E38" stroke-width="1" opacity="0.45"/>
+    <line x1="18" y1="17" x2="18" y2="29" stroke="#6B1E38" stroke-width="1" opacity="0.45"/>
+    <line x1="25" y1="17" x2="25" y2="29" stroke="#6B1E38" stroke-width="1" opacity="0.45"/>
+    <line x1="32" y1="17" x2="32" y2="29" stroke="#6B1E38" stroke-width="1" opacity="0.45"/>
   </svg>`,
 
   PAPIER: `<svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
@@ -967,17 +967,17 @@ const MAT_ICONS = {
 
 // ─── FAMILLES / COULEURS ───────────────────────────────
 const PRESETS = [
-  {label:'Dibond',   value:'DIBOND',             color:'#2563eb', defaultCouleur:'Blanc'},
-  {label:'PVC',      value:'PVC',                color:'#16a34a', defaultCouleur:'Blanc'},
-  {label:'MDF',      value:'MDF',                color:'#92400e', defaultCouleur:'Brut'},
-  {label:'Plexi',    value:'PLEXIGLASS',         color:'#0891b2', defaultCouleur:'Transparent'},
-  {label:'Beelite',  value:'BEELITE',            color:'#7c3aed', defaultCouleur:'Blanc'},
-  {label:'Polypro',  value:'POLYPRO ALVÉOLAIRE', color:'#ea580c', defaultCouleur:'Blanc'},
-  {label:'Carton',   value:'CARTON E-GOLF',      color:'#65a30d', defaultCouleur:'Brun'},
-  {label:'Palboard', value:'PALBOARD',           color:'#db2777', defaultCouleur:'Blanc'},
-  {label:'Papier',   value:'PAPIER',             color:'#6b7280', defaultCouleur:'Blanc'},
+  {label:'Dibond',   value:'DIBOND',             color:'#003366', defaultCouleur:'Blanc'},
+  {label:'PVC',      value:'PVC',                color:'#0A6E4F', defaultCouleur:'Blanc'},
+  {label:'MDF',      value:'MDF',                color:'#7A4A1E', defaultCouleur:'Brut'},
+  {label:'Plexi',    value:'PLEXIGLASS',         color:'#1A6B8A', defaultCouleur:'Transparent'},
+  {label:'Beelite',  value:'BEELITE',            color:'#4A4A8A', defaultCouleur:'Blanc'},
+  {label:'Polypro',  value:'POLYPRO ALVÉOLAIRE', color:'#C25A00', defaultCouleur:'Blanc'},
+  {label:'Carton',   value:'CARTON E-GOLF',      color:'#5A7A1A', defaultCouleur:'Brun'},
+  {label:'Palboard', value:'PALBOARD',           color:'#8A2A4A', defaultCouleur:'Blanc'},
+  {label:'Papier',   value:'PAPIER',             color:'#4A5568', defaultCouleur:'Blanc'},
 ];
-const PALETTE = ['#e11d48','#ea580c','#d97706','#16a34a','#0891b2','#2563eb','#7c3aed','#db2777','#0f766e','#65a30d','#92400e','#6b7280'];
+const PALETTE = ['#003366','#1A6B8A','#0A6E4F','#5A7A1A','#7A4A1E','#C25A00','#8A2A4A','#4A4A8A','#4A5568','#1A4080','#2A5A3A','#6B4A20'];
 const PRESET_MAP = {};
 PRESETS.forEach(p => PRESET_MAP[p.value] = p.color);
 
@@ -999,15 +999,15 @@ function setPreset(i) { selectMat(i); } // alias de selectMat
 
 // ─── SÉLECTION MATIÈRE — boutons hardcodés ─────────────
 const MAT_DEFS = [
-  {value:'DIBOND',             couleur:'Blanc',       color:'#2563eb'},
-  {value:'PVC',                couleur:'Blanc',       color:'#16a34a'},
-  {value:'MDF',                couleur:'Brut',        color:'#92400e'},
-  {value:'PLEXIGLASS',         couleur:'Transparent', color:'#0891b2'},
-  {value:'BEELITE',            couleur:'Blanc',       color:'#7c3aed'},
-  {value:'POLYPRO ALVÉOLAIRE', couleur:'Blanc',       color:'#ea580c'},
-  {value:'CARTON E-GOLF',      couleur:'Brun',        color:'#65a30d'},
-  {value:'PALBOARD',           couleur:'Blanc',       color:'#db2777'},
-  {value:'PAPIER',             couleur:'Blanc',       color:'#6b7280'},
+  {value:'DIBOND',             couleur:'Blanc',       color:'#003366'},
+  {value:'PVC',                couleur:'Blanc',       color:'#0A6E4F'},
+  {value:'MDF',                couleur:'Brut',        color:'#7A4A1E'},
+  {value:'PLEXIGLASS',         couleur:'Transparent', color:'#1A6B8A'},
+  {value:'BEELITE',            couleur:'Blanc',       color:'#4A4A8A'},
+  {value:'POLYPRO ALVÉOLAIRE', couleur:'Blanc',       color:'#C25A00'},
+  {value:'CARTON E-GOLF',      couleur:'Brun',        color:'#5A7A1A'},
+  {value:'PALBOARD',           couleur:'Blanc',       color:'#8A2A4A'},
+  {value:'PAPIER',             couleur:'Blanc',       color:'#4A5568'},
 ];
 
 function selectMat(i) {
@@ -1680,7 +1680,7 @@ function renderStock(){
       const pHmm=toMm(parseFloat(p.h),p.ud||'mm');
       const normal  = pLmm>=reqL && pHmm>=reqH;
       const rotated = pLmm>=reqH && pHmm>=reqL;
-      if(rotated&&!normal) rotNote=` <span style="background:#eff6ff;color:#2563eb;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;">↻ retournée</span>`;
+      if(rotated&&!normal) rotNote=` <span style="background:#eff6ff;color:#0066CC;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;">↻ retournée</span>`;
     }
 
     return `<div class="plate-card" data-id="${p.id}">
