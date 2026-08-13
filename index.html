@@ -1656,7 +1656,7 @@ function onScanFile(ev) {
   r.readAsDataURL(f);
 }
 // URL de ton Worker Cloudflare (à adapter après déploiement)
-const SCAN_PROXY_URL = localStorage.getItem('ct_scan_proxy') || 'https://plate-id-proxy.TON-SOUS-DOMAINE.workers.dev';
+const SCAN_PROXY_URL = localStorage.getItem('ct_scan_proxy') || 'https://plate-id-proxy.jeanson-paul.workers.dev';
 
 async function runScan() {
   if(!scanImageData) { document.getElementById('scanStatus').textContent = '⚠ Choisissez une photo'; return; }
