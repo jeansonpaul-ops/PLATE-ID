@@ -134,9 +134,11 @@ input::placeholder{color:#c0c5d8;}
 .hist-arrow{color:var(--accent);font-size:14px;}
 
 /* PRINT BAR */
-.print-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px 22px;background:linear-gradient(to top,var(--bg) 55%,transparent);z-index:50;}
-.btn-print{width:100%;background:var(--accent);color:#fff;border:none;border-radius:16px;padding:18px;font-family:var(--sans);font-weight:900;font-size:17px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .15s;box-shadow:0 4px 24px rgba(232,146,10,.4);}
-.btn-print:active{transform:scale(.98);box-shadow:0 2px 10px rgba(232,146,10,.3);}
+.print-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px 22px;background:linear-gradient(to top,var(--bg) 55%,transparent);z-index:50;display:flex;gap:10px;align-items:stretch;}
+.btn-home-scan{flex-shrink:0;width:60px;background:var(--surface);color:var(--accent);border:1.5px solid var(--border);border-radius:16px;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:all .15s;}
+.btn-home-scan:active{transform:scale(.97);background:var(--surface2);}
+.btn-print{width:100%;background:var(--accent);color:#fff;border:none;border-radius:16px;padding:18px;font-family:var(--sans);font-weight:900;font-size:17px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .15s;box-shadow:0 4px 24px rgba(0,51,102,.35);}
+.btn-print:active{transform:scale(.98);box-shadow:0 2px 10px rgba(0,51,102,.3);}
 .btn-print:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 @supports(padding-bottom:env(safe-area-inset-bottom)){.print-bar{padding-bottom:calc(12px + env(safe-area-inset-bottom));}}
 
@@ -249,6 +251,20 @@ input::placeholder{color:#c0c5d8;}
 .scan-status{font-size:13px;min-height:20px;text-align:center;font-weight:600;}
 .scan-status.working{color:var(--accent);}
 .scan-status.error{color:#c0392b;}
+.count-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:6px 14px;margin-bottom:12px;}
+.count-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.count-row:last-child{border-bottom:none;}
+.count-k{font-size:13px;color:var(--muted);font-weight:600;}
+.count-v{font-size:15px;color:var(--text);font-weight:700;text-align:right;}
+.count-stock{text-align:center;font-size:13px;font-weight:600;margin-bottom:16px;padding:10px;border-radius:10px;}
+.count-stock.exists{background:var(--green-bg);color:var(--green);}
+.count-stock.new{background:var(--amber-bg);color:var(--amber);}
+.count-actions{display:flex;gap:10px;}
+.count-btn{flex:1;border:none;border-radius:14px;padding:18px 12px;font-family:var(--sans);font-weight:800;font-size:16px;cursor:pointer;transition:transform .12s;}
+.count-btn:active{transform:scale(.97);}
+.count-minus{background:var(--red-bg);color:var(--red);border:1.5px solid #fca5a5;}
+.count-plus{background:var(--accent);color:#fff;}
+.count-btn:disabled{opacity:.4;cursor:not-allowed;}
 .modal-cancel{background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);border-radius:12px;padding:15px 20px;font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer;}
 
 /* CONN SHEET */
@@ -523,6 +539,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
 <!-- BOUTON IMPRIMER -->
 <div class="print-bar" id="printBar">
+  <button class="btn-home-scan" id="homeScanBtn" aria-label="Scanner une étiquette (stock)" title="Scanner une étiquette">📷</button>
   <button class="btn-print" id="btnPrint">🖨 &nbsp;IMPRIMER</button>
 </div>
 
@@ -669,6 +686,30 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
       <button class="modal-cancel" id="scanCancel">Annuler</button>
       <button class="modal-ok" id="scanGo" disabled>🔍 Analyser l'étiquette</button>
     </div>
+  </div>
+</div>
+
+<!-- CONFIRM COUNT MODAL (scan accueil : +1 / -1) -->
+<div class="modal-backdrop" id="countBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 Confirmer la plaque</div>
+    <div class="scan-intro">Vérifiez les informations lues sur l'étiquette, puis ajoutez ou décomptez une plaque du stock.</div>
+
+    <div class="count-card" id="countCard">
+      <div class="count-row"><span class="count-k">Matière</span><span class="count-v" id="cvFam">—</span></div>
+      <div class="count-row"><span class="count-k">Couleur</span><span class="count-v" id="cvCol">—</span></div>
+      <div class="count-row"><span class="count-k">Épaisseur</span><span class="count-v" id="cvEp">—</span></div>
+      <div class="count-row"><span class="count-k">Dimensions</span><span class="count-v" id="cvDim">—</span></div>
+    </div>
+
+    <div class="count-stock" id="countStock"></div>
+
+    <div class="count-actions">
+      <button class="count-btn count-minus" id="countMinus">− 1 (sortie)</button>
+      <button class="count-btn count-plus" id="countPlus">＋ 1 (entrée)</button>
+    </div>
+    <button class="modal-cancel" id="countCancel" style="width:100%;margin-top:8px;">Annuler</button>
   </div>
 </div>
 
@@ -1635,6 +1676,9 @@ async function mergeDuplicates(dups) {
 }
 
 // ─── SCAN ÉTIQUETTE (Claude Vision) ────────────────────
+// Mode du scan en cours : 'add' (onglet Stock → formulaire) ou 'count' (accueil → +1/-1)
+let scanMode = 'add';
+let countPlate = null; // infos lues, en attente de confirmation +1/-1
 // Cherche une plaque identique (famille + ep + couleur + dimensions) déjà en stock.
 function findDuplicate(fam, ep, couleur, l, h, exceptId) {
   const epNum = parseFloat(ep) || 0;
@@ -1650,7 +1694,8 @@ function findDuplicate(fam, ep, couleur, l, h, exceptId) {
 let scanImageData = null;
 let scanImageMime = null;
 
-function openScanModal() {
+function openScanModal(mode) {
+  scanMode = (mode === 'count') ? 'count' : 'add';
   scanImageData = null; scanImageMime = null;
   document.getElementById('scanFile').value = '';
   document.getElementById('scanPreviewWrap').style.display = 'none';
@@ -1658,6 +1703,9 @@ function openScanModal() {
   const st = document.getElementById('scanStatus');
   st.textContent = ''; st.className = 'scan-status';
   document.getElementById('scanGo').disabled = true;
+  // Titre selon usage
+  document.querySelector('#scanBackdrop .modal-title').textContent =
+    scanMode === 'count' ? '📷 Scanner (entrée / sortie)' : '📷 Scanner une étiquette';
   document.getElementById('scanBackdrop').classList.add('show');
 }
 function resetScanPhoto() {
@@ -1729,7 +1777,8 @@ async function runScan() {
     if(parsed.error) throw new Error(parsed.error);
 
     document.getElementById('scanBackdrop').classList.remove('show');
-    prefillAddModal(parsed);
+    if(scanMode === 'count') openCountModal(parsed);
+    else prefillAddModal(parsed);
   } catch(e) {
     status.textContent = '❌ '+e.message;
     status.className = 'scan-status error';
@@ -1763,6 +1812,56 @@ function prefillAddModal(p) {
   if(p.h) document.getElementById('mH').value = p.h;
   document.getElementById('modalTitle').textContent = '📷 Vérifier & enregistrer';
   showToast('✓ Étiquette lue — vérifiez les champs');
+}
+
+// ─── CONFIRMATION +1 / -1 (scan accueil) ────────────────
+function openCountModal(p) {
+  countPlate = p;
+  const dim = (p.l||p.h) ? `${p.l||'?'} × ${p.h||'?'} mm` : '—';
+  document.getElementById('cvFam').textContent = (p.famille||'—');
+  document.getElementById('cvCol').textContent = (p.couleur||'—');
+  document.getElementById('cvEp').textContent = p.ep ? `${p.ep} ${p.unite||'mm'}` : '—';
+  document.getElementById('cvDim').textContent = dim;
+
+  const dup = findDuplicate(p.famille, p.ep, p.couleur, p.l, p.h);
+  const box = document.getElementById('countStock');
+  const minus = document.getElementById('countMinus');
+  if(dup){
+    box.textContent = `✓ En stock : ${dup.qty||0} plaque(s)`;
+    box.className = 'count-stock exists';
+    minus.disabled = (dup.qty||0) <= 0;
+  } else {
+    box.textContent = '⚠ Pas encore en stock — « ＋1 » créera la fiche';
+    box.className = 'count-stock new';
+    minus.disabled = true;
+  }
+  document.getElementById('countBackdrop').classList.add('show');
+}
+async function doCount(delta) {
+  if(!countPlate) return;
+  const p = countPlate;
+  const dup = findDuplicate(p.famille, p.ep, p.couleur, p.l, p.h);
+  try {
+    if(dup){
+      const newQty = Math.max(0, (dup.qty||0) + delta);
+      await fbUpdate(dup.id, { qty: newQty, lastPrint: Date.now() });
+      showToast(delta>0 ? `＋1 ${dup.famille} (${newQty})` : `−1 ${dup.famille} (${newQty})`);
+    } else if(delta > 0){
+      // Création de la fiche via +1
+      const id = Date.now().toString();
+      await fbSet(id, {
+        famille:(p.famille||'').trim(), couleur:(p.couleur||'').trim(),
+        ep:parseFloat(p.ep)||0, unite:p.unite||'mm',
+        l:p.l||'', h:p.h||'', ud:'mm', emplacement:'',
+        qty:1, seuil:2, lastPrint:Date.now()
+      });
+      showToast(`＋1 ${p.famille||'plaque'} (nouvelle fiche)`);
+    }
+    document.getElementById('countBackdrop').classList.remove('show');
+    countPlate = null;
+  } catch(e){
+    showToast('❌ '+e.message);
+  }
 }
 
 async function savePlate() {
@@ -2138,7 +2237,12 @@ async function quickReconnect() {
   document.getElementById('filterH').addEventListener('input', renderStock);
   document.getElementById('filterUnit').addEventListener('change', renderStock);
   document.querySelector('.btn-add')?.addEventListener('click', function() { openAddModal(); });
-  document.getElementById('stockScanBtn')?.addEventListener('click', openScanModal);
+  document.getElementById('stockScanBtn')?.addEventListener('click', function(){ openScanModal('add'); });
+  document.getElementById('homeScanBtn')?.addEventListener('click', function(){ openScanModal('count'); });
+  document.getElementById('countPlus')?.addEventListener('click', function(){ doCount(1); });
+  document.getElementById('countMinus')?.addEventListener('click', function(){ doCount(-1); });
+  document.getElementById('countCancel')?.addEventListener('click', function(){ document.getElementById('countBackdrop').classList.remove('show'); countPlate=null; });
+  document.getElementById('countBackdrop')?.addEventListener('click', function(e){ if(e.target.id==='countBackdrop'){ this.classList.remove('show'); countPlate=null; } });
   document.getElementById('scanFile')?.addEventListener('change', onScanFile);
   document.getElementById('scanGo')?.addEventListener('click', runScan);
   document.getElementById('scanRetake')?.addEventListener('click', resetScanPhoto);
