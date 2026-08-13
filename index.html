@@ -159,6 +159,8 @@ input::placeholder{color:#c0c5d8;}
 .btn-add:active{opacity:.85;}
 .btn-export{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:0 12px;height:42px;font-family:var(--sans);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .btn-export:active{opacity:.8;}
+.btn-scan{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:0 12px;height:42px;font-size:16px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.btn-scan:active{opacity:.8;}
 
 /* FILTRE TAILLE */
 .size-filter-row{display:flex;flex-direction:column;gap:6px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;}
@@ -523,6 +525,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
         <input type="text" id="stockSearch" placeholder="Matière, couleur, emplacement…" autocomplete="off">
       </div>
       <button class="btn-add">＋ Ajouter</button>
+      <button class="btn-scan" title="Scanner une étiquette">📷</button>
       <button class="btn-export" title="Exporter le stock">⬇</button>
     </div>
 
@@ -569,6 +572,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     </div>
 
   </div>
+  <div id="dupBanner" style="display:none;margin:8px 16px 0;padding:10px 12px;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;font-size:13px;color:#92400e;"></div>
   <div class="plates-list" id="platesScroll">
     <div class="empty-state"><div class="empty-ico">⏳</div><div class="empty-txt">Chargement du stock…</div></div>
   </div>
@@ -622,6 +626,35 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
     <div class="modal-actions">
       <button class="modal-cancel">Annuler</button>
       <button class="modal-ok">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN MODAL -->
+<div class="modal-backdrop" id="scanBackdrop">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📷 Scanner une étiquette</div>
+    <div class="modal-fields">
+      <div class="field">
+        <div class="field-label">Photo de l'étiquette</div>
+        <input type="file" id="scanFile" accept="image/*" capture="environment"
+          style="width:100%;padding:12px;border:1.5px dashed var(--border);border-radius:10px;background:var(--surface2);font-size:13px;">
+      </div>
+      <div id="scanPreviewWrap" style="display:none;text-align:center;margin:4px 0;">
+        <img id="scanPreview" style="max-width:100%;max-height:180px;border-radius:10px;border:1.5px solid var(--border);">
+      </div>
+      <div class="field">
+        <div class="field-label">Clé API Claude (sk-ant-…)</div>
+        <input type="password" id="scanApiKey" placeholder="Requise hors aperçu" autocomplete="off"
+          style="font-family:var(--mono);font-size:12px;">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Stockée uniquement sur cet appareil.</div>
+      </div>
+      <div id="scanStatus" style="font-size:13px;color:var(--muted);min-height:18px;text-align:center;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="scanCancel">Annuler</button>
+      <button class="modal-ok" id="scanGo">Analyser</button>
     </div>
   </div>
 </div>
@@ -819,16 +852,27 @@ db.collection(COLL).onSnapshot( snap => {
   setSyncStatus('live');
   renderStock();
   updateBadge();
+  checkDuplicatesOnLoad();
 }, err => {
   setSyncStatus('error');
   console.error('Firebase erreur:', err.message);
 });
 
+function fbTimestamp() {
+  // serverTimestamp() n'existe qu'avec le vrai Firebase chargé.
+  // En fallback localStorage, on utilise un timestamp numérique.
+  try {
+    if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
+      return firebase.firestore.FieldValue.serverTimestamp();
+    }
+  } catch(e) {}
+  return Date.now();
+}
 async function fbSet(id, data) {
-  await db.collection(COLL).doc(id).set({ ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await db.collection(COLL).doc(id).set({ ...data, updatedAt: fbTimestamp() });
 }
 async function fbUpdate(id, data) {
-  await db.collection(COLL).doc(id).update( { ...data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  await db.collection(COLL).doc(id).update( { ...data, updatedAt: fbTimestamp() });
 }
 async function fbDelete(id) {
   await db.collection(COLL).doc(id).delete();
@@ -1441,9 +1485,11 @@ async function autoSaveToStock(mat, ep, unite, couleur, h, lon, ud) {
   const empl = (document.getElementById('emplacement') ? document.getElementById('emplacement').value.trim() : '');
 
   const existing = stock.find(p =>
-    p.famille.toUpperCase() === mat.toUpperCase() &&
+    (p.famille||'').toUpperCase() === mat.toUpperCase() &&
     String(p.ep) === String(epNum) &&
-    (p.couleur||'').toUpperCase() === (couleur||'').toUpperCase()
+    (p.couleur||'').toUpperCase() === (couleur||'').toUpperCase() &&
+    String(p.l||'') === String(lon||'') &&
+    String(p.h||'') === String(h||'')
   );
 
   if(existing){
@@ -1538,6 +1584,167 @@ function closeAddModal(e) {
 function onMFamChange() {
   document.getElementById('mNewFamRow').style.display=document.getElementById('mFam').value==='__new__'?'':'none';
 };
+let _dupChecked = false;
+// Regroupe les entrées identiques (famille+ep+couleur+dimensions) en groupes de doublons.
+function findDuplicateGroups() {
+  const groups = {};
+  stock.forEach(p => {
+    const k = [(p.famille||'').toUpperCase(), String(p.ep), (p.couleur||'').toUpperCase(), String(p.l||''), String(p.h||'')].join('|');
+    (groups[k] = groups[k] || []).push(p);
+  });
+  return Object.values(groups).filter(g => g.length > 1);
+}
+function checkDuplicatesOnLoad() {
+  const banner = document.getElementById('dupBanner');
+  if(!banner) return;
+  const dups = findDuplicateGroups();
+  if(!dups.length){ banner.style.display='none'; return; }
+  const n = dups.reduce((s,g)=>s+g.length,0);
+  banner.style.display='block';
+  banner.innerHTML = `⚠ ${dups.length} type(s) de plaque en double (${n} fiches). `
+    + `<button id="dupMergeBtn" style="margin-left:6px;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer;">Fusionner</button>`;
+  document.getElementById('dupMergeBtn').addEventListener('click', ()=>mergeDuplicates(dups));
+}
+// Fusionne chaque groupe : garde la 1ère fiche, additionne les quantités, supprime les autres.
+async function mergeDuplicates(dups) {
+  if(!confirm(`Fusionner les doublons ?\n\nPour chaque plaque identique : les quantités sont additionnées sur une seule fiche, les fiches en trop sont supprimées.\n\nCette action est définitive.`)) return;
+  let merged = 0;
+  for(const g of dups){
+    const keep = g[0];
+    const totalQty = g.reduce((s,p)=>s+(p.qty||0),0);
+    const empl = g.map(p=>p.emplacement).filter(Boolean)[0] || '';
+    try{
+      await fbUpdate(keep.id, { qty: totalQty, emplacement: empl, lastPrint: Date.now() });
+      for(let i=1;i<g.length;i++){ await fbDelete(g[i].id); merged++; }
+    }catch(e){ showToast('❌ Fusion: '+e.message); return; }
+  }
+  showToast(`✅ ${merged} doublon(s) fusionné(s)`);
+}
+
+// ─── SCAN ÉTIQUETTE (Claude Vision) ────────────────────
+// Cherche une plaque identique (famille + ep + couleur + dimensions) déjà en stock.
+function findDuplicate(fam, ep, couleur, l, h, exceptId) {
+  const epNum = parseFloat(ep) || 0;
+  return stock.find(p =>
+    (exceptId ? p.id !== exceptId : true) &&
+    (p.famille||'').toUpperCase() === (fam||'').toUpperCase() &&
+    String(p.ep) === String(epNum) &&
+    (p.couleur||'').toUpperCase() === (couleur||'').toUpperCase() &&
+    String(p.l||'') === String(l||'') &&
+    String(p.h||'') === String(h||'')
+  );
+}
+let scanImageData = null;
+let scanImageMime = null;
+
+function openScanModal() {
+  scanImageData = null; scanImageMime = null;
+  document.getElementById('scanFile').value = '';
+  document.getElementById('scanPreviewWrap').style.display = 'none';
+  document.getElementById('scanStatus').textContent = '';
+  document.getElementById('scanApiKey').value = localStorage.getItem('ct_claude_key') || '';
+  document.getElementById('scanBackdrop').classList.add('show');
+}
+function closeScanModal(e) {
+  // Ferme si clic sur le fond (backdrop) ou via le bouton Annuler.
+  if(e && e.type==='click' && e.target && e.target.id !== 'scanBackdrop' && e.target.id !== 'scanCancel') return;
+  document.getElementById('scanBackdrop').classList.remove('show');
+}
+function onScanFile(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    scanImageData = r.result.split(',')[1];
+    scanImageMime = f.type || 'image/jpeg';
+    document.getElementById('scanPreview').src = r.result;
+    document.getElementById('scanPreviewWrap').style.display = 'block';
+  };
+  r.readAsDataURL(f);
+}
+async function runScan() {
+  if(!scanImageData) { document.getElementById('scanStatus').textContent = '⚠ Choisissez une photo'; return; }
+  const key = document.getElementById('scanApiKey').value.trim();
+  if(key) localStorage.setItem('ct_claude_key', key);
+
+  const status = document.getElementById('scanStatus');
+  const btn = document.getElementById('scanGo');
+  btn.disabled = true;
+  status.textContent = '🔍 Analyse en cours…';
+
+  const prompt = `Tu analyses la photo d'une étiquette de plaque (matériau de signalétique). Extrais les informations et réponds UNIQUEMENT avec un objet JSON, sans texte ni backticks, au format exact :
+{"famille":"","couleur":"","ep":0,"unite":"mm","l":0,"h":0}
+- "famille" = nom du matériau en majuscules (ex: DIBOND, MULTIPLEX, PVC).
+- "couleur" = texte entre parenthèses (ex: BLANC, BRUT BOULEAU). Vide si absent.
+- "ep" = épaisseur numérique (ex: 3 pour "3 mm").
+- "unite" = unité de l'épaisseur (mm par défaut).
+- "l" = longueur en mm (le L: dans "L:1560 x H:1050 mm").
+- "h" = hauteur en mm (le H:).
+Si une valeur est illisible, mets 0 ou "".`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        key ? { 'x-api-key': key } : {}
+      ),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: scanImageMime, data: scanImageData } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+    if(!resp.ok) { const t = await resp.text(); throw new Error('HTTP '+resp.status+' '+t.slice(0,120)); }
+    const data = await resp.json();
+    const txt = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json|```/g,'').trim();
+    let parsed;
+    try { parsed = JSON.parse(txt); }
+    catch(e){ throw new Error('Réponse illisible : '+txt.slice(0,80)); }
+
+    // Fermer le scan, ouvrir le modal d'ajout pré-rempli
+    document.getElementById('scanBackdrop').classList.remove('show');
+    prefillAddModal(parsed);
+  } catch(e) {
+    status.textContent = '❌ '+e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+function prefillAddModal(p) {
+  const fam = (p.famille||'').trim();
+  // Alerte si la plaque scannée est déjà en stock
+  const dup = findDuplicate(fam, p.ep, p.couleur, p.l, p.h);
+  if(dup){
+    const label = `${dup.famille} ${dup.ep}${dup.unite||'mm'}${dup.couleur?' ('+dup.couleur+')':''} ${dup.l||'?'}×${dup.h||'?'}`;
+    const ok = confirm(`⚠ Cette plaque existe déjà en stock :\n\n${label}\nQuantité actuelle : ${dup.qty||0}\n\nOK = +1 à la quantité existante\nAnnuler = créer une nouvelle fiche quand même`);
+    if(ok){
+      fbUpdate(dup.id, { qty: (dup.qty||0)+1, lastPrint: Date.now() })
+        .then(()=>showToast(`📦 ${dup.famille} : quantité +1 (${(dup.qty||0)+1})`))
+        .catch(e=>showToast('❌ '+e.message));
+      return;
+    }
+  }
+  openAddModal();
+  const famSel = document.getElementById('mFam');
+  const opt = [...famSel.options].find(o => o.value.toUpperCase() === fam.toUpperCase());
+  if(opt){ famSel.value = opt.value; document.getElementById('mNewFamRow').style.display='none'; }
+  else if(fam){ famSel.value='__new__'; document.getElementById('mNewFamRow').style.display=''; document.getElementById('mNewFam').value=fam; }
+  document.getElementById('mCouleur').value = p.couleur || '';
+  if(p.ep) document.getElementById('mEp').value = p.ep;
+  if(p.unite) document.getElementById('mUnite').value = p.unite;
+  if(p.l) document.getElementById('mL').value = p.l;
+  if(p.h) document.getElementById('mH').value = p.h;
+  document.getElementById('modalTitle').textContent = '📷 Vérifier & enregistrer';
+  showToast('✓ Étiquette lue — vérifiez les champs');
+}
+
 async function savePlate() {
   let fam=document.getElementById('mFam').value;
   if(fam==='__new__')fam=document.getElementById('mNewFam').value.trim();
@@ -1545,10 +1752,27 @@ async function savePlate() {
   const ep=document.getElementById('mEp').value;
   if(!ep){showToast('⚠ Entrez l\'épaisseur');return;}
   const id=document.getElementById('mId').value||Date.now().toString();
+  const couleur=document.getElementById('mCouleur').value.trim();
+  const lVal=document.getElementById('mL').value||'';
+  const hVal=document.getElementById('mH').value||'';
+  // Avertir si un doublon existe déjà (sauf si on édite cette même fiche)
+  const dup = findDuplicate(fam, ep, couleur, lVal, hVal, id);
+  if(dup){
+    const label = `${dup.famille} ${dup.ep}${dup.unite||'mm'}${dup.couleur?' ('+dup.couleur+')':''} ${dup.l||'?'}×${dup.h||'?'}`;
+    const ok = confirm(`⚠ Une plaque identique existe déjà :\n\n${label}\nQuantité : ${dup.qty||0}\n\nOK = +1 à l'existante\nAnnuler = créer quand même une nouvelle fiche`);
+    if(ok){
+      try{
+        await fbUpdate(dup.id, { qty:(dup.qty||0)+1, lastPrint:Date.now() });
+        document.getElementById('modalBackdrop').classList.remove('show');
+        showToast(`📦 ${dup.famille} : quantité +1 (${(dup.qty||0)+1})`);
+      }catch(e){showToast('❌ '+e.message);}
+      return;
+    }
+  }
   const plate={
-    famille:fam, couleur:document.getElementById('mCouleur').value.trim(),
+    famille:fam, couleur:couleur,
     ep:parseFloat(ep), unite:document.getElementById('mUnite').value,
-    h:document.getElementById('mH').value||'', l:document.getElementById('mL').value||'',
+    h:hVal, l:lVal,
     ud:'mm', emplacement:document.getElementById('mEmpl').value.trim(),
     qty:parseInt(document.getElementById('mQty').value)||0,
     seuil:parseInt(document.getElementById('mSeuil').value)||2,
@@ -1894,6 +2118,11 @@ async function quickReconnect() {
   document.getElementById('filterH').addEventListener('input', renderStock);
   document.getElementById('filterUnit').addEventListener('change', renderStock);
   document.querySelector('.btn-add')?.addEventListener('click', function() { openAddModal(); });
+  document.querySelector('.btn-scan')?.addEventListener('click', openScanModal);
+  document.getElementById('scanFile')?.addEventListener('change', onScanFile);
+  document.getElementById('scanGo')?.addEventListener('click', runScan);
+  document.getElementById('scanCancel')?.addEventListener('click', function(e){ closeScanModal(e); });
+  document.getElementById('scanBackdrop')?.addEventListener('click', closeScanModal);
   document.querySelector('.btn-export')?.addEventListener('click', exportStock);
   document.querySelector('.size-clear')?.addEventListener('click', clearSizeFilter);
   document.getElementById('fc-all')?.addEventListener('click', function() { setStateFilter('all'); });
