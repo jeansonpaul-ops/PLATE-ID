@@ -135,8 +135,8 @@ input::placeholder{color:#c0c5d8;}
 
 /* PRINT BAR */
 .print-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px 22px;background:linear-gradient(to top,var(--bg) 55%,transparent);z-index:50;display:flex;gap:10px;align-items:stretch;}
-.btn-home-scan{flex-shrink:0;width:60px;background:var(--surface);color:var(--accent);border:1.5px solid var(--border);border-radius:16px;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:all .15s;}
-.btn-home-scan:active{transform:scale(.97);background:var(--surface2);}
+.btn-home-scan{flex-shrink:0;background:#e2562f;color:#fff;border:none;border-radius:16px;padding:18px 20px;font-family:var(--sans);font-weight:900;font-size:17px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;white-space:nowrap;box-shadow:0 4px 24px rgba(226,86,47,.4);transition:all .15s;}
+.btn-home-scan:active{transform:scale(.97);box-shadow:0 2px 10px rgba(226,86,47,.3);}
 .btn-print{width:100%;background:var(--accent);color:#fff;border:none;border-radius:16px;padding:18px;font-family:var(--sans);font-weight:900;font-size:17px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .15s;box-shadow:0 4px 24px rgba(0,51,102,.35);}
 .btn-print:active{transform:scale(.98);box-shadow:0 2px 10px rgba(0,51,102,.3);}
 .btn-print:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
@@ -539,7 +539,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,146,10,.
 
 <!-- BOUTON IMPRIMER -->
 <div class="print-bar" id="printBar">
-  <button class="btn-home-scan" id="homeScanBtn" aria-label="Scanner une étiquette (stock)" title="Scanner une étiquette">📷</button>
+  <button class="btn-home-scan" id="homeScanBtn" aria-label="Scanner une étiquette">📷 &nbsp;SCAN</button>
   <button class="btn-print" id="btnPrint">🖨 &nbsp;IMPRIMER</button>
 </div>
 
